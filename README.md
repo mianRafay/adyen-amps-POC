@@ -2,8 +2,6 @@
 
 
 
-![Card checkout demo](public/images/cardcheckout.gif)
-
 ## Supported Integrations
 
 **React + Node.js + Express** demos of the following client-side integrations are currently available in this repository:
