@@ -101,7 +101,7 @@ To learn React, check out the [React documentation](https://reactjs.org/).
 **Call This Endpoint**: http://localhost:8080/api/placeOrder
 
 ## Sample Request
-`
+```
 {
     "accountInfo": {
         "acctCreateAccountRequestDetails": {
@@ -167,13 +167,13 @@ To learn React, check out the [React documentation](https://reactjs.org/).
         }
     }
 }
-`
+```
 ## Sample Response
-`
+```
 {
     "error": "false",
     "statusCode": 200,
     "orderId": "efa1b6ac-fcf8-4264-b244-b038cc0fe475",
     "returnUrl": "http://localhost:3000/checkout/dropin/efa1b6ac-fcf8-4264-b244-b038cc0fe475"
 }
-`
+```
