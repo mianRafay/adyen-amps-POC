@@ -47,9 +47,6 @@ npm run server
 
 To try out integrations with test card numbers and payment method details, see [Test card numbers](https://docs.adyen.com/development-resources/test-cards/test-card-numbers).
 
-**Note**
-
-This example doesn't authenticate the webhook, in actual practice you should protect the endpoint with basic authentication and set the same credentials on notification setting above.
 
 ## Available Scripts
 
