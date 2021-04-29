@@ -15,7 +15,7 @@ Node.js 8.0+
 1. Clone this repo:
 
 ```
-git clone https://github.com/adyen-examples/adyen-react-online-payments.git
+https://github.com/mianRafay/adyen-amps-POC.git
 ```
 
 2. Navigate to the root directory and install dependencies:
