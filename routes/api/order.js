@@ -258,11 +258,11 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
         // required for 3ds2 native flow
         allow3DS2: false,
       },
-      origin: "https://cim-adyen.aria-ntegra.com", // required for 3ds2 native flow
+      origin: "https://api-adyen.aria-ntegra.com", // required for 3ds2 native flow
       browserInfo: req.body.browserInfo, // required for 3ds2
       shopperIP, // required by some issuers for 3ds2
       // we pass the orderRef in return URL to get paymentData during redirects
-      returnUrl: `https://cim-adyen.aria-ntegra.com/api/handleShopperRedirect?orderRef=${orderRef}`, // required for 3ds2 redirect flow
+      returnUrl: `https://api-adyen.aria-ntegra.com/api/handleShopperRedirect?orderRef=${orderRef}`, // required for 3ds2 redirect flow
       paymentMethod: req.body.paymentMethod,
       billingAddress: req.body.billingAddress,
       shopperReference: req.params.orderId,
@@ -272,7 +272,7 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
     });
 
     const { action } = response;
-    console.log(response,"response");
+    console.log(response, "response");
     const orderId = req.params.orderId;
     paymentStore[orderRef] = {
       amount: {
