@@ -15,9 +15,9 @@ const db = {};
 
 let newConfig = {
   username: "root",
-  password: " root ",
+  password: "R00tonE23",
   dialect: "mysql",
-  host: "localhost",
+  host: "db-stampen.c9bn4vxywq3w.eu-west-2.rds.amazonaws.com",
   database: "stampen_adyen",
   operatorsAliases: "0",
   logging: true,
