@@ -256,6 +256,7 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
       channel: "Web", // required
       additionalData: {
         // required for 3ds2 native flow
+        "riskdata.skipRisk": "true",
         allow3DS2: false,
       },
       origin: "https://api-adyen.aria-ntegra.com", // required for 3ds2 native flow
