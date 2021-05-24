@@ -1,12 +1,27 @@
 # Adyen [online payment](https://docs.adyen.com/checkout) integration demos
 
-
+This repository includes examples of PCI-compliant React UI integrations for online payments with Adyen. Within this demo app, you'll find a simplified version of an e-commerce website, complete with commented code to highlight key features and concepts of Adyen's API. Check out the underlying code to see how you can integrate Adyen to give your shoppers the option to pay with their preferred payment methods, all in a seamless checkout experience.
 
 ![Card checkout demo](public/images/cardcheckout.gif)
 
 ## Supported Integrations
 
 **React + Node.js + Express** demos of the following client-side integrations are currently available in this repository:
+
+- [Drop-in](https://docs.adyen.com/checkout/drop-in-web)
+- [Component](https://docs.adyen.com/checkout/components-web)
+  - Card
+  - iDEAL
+  - giropay
+  - Dotpay
+  - EPS
+  - SOFORT
+  - Bancontact card
+  - Paysafe card
+- Cancellation and Refunds
+- Webhook notifications for cancellation
+
+Each demo leverages Adyen's API Library for Node.js ([GitHub](https://github.com/Adyen/adyen-node-api-library) | [Docs](https://docs.adyen.com/development-resources/libraries#javascript)) on the server side.
 
 ## Requirements
 

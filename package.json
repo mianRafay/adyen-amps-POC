@@ -7,6 +7,7 @@
     "@adyen/api-library": "^6.0.0",
     "@reduxjs/toolkit": "^1.1.0",
     "btoa": "^1.2.1",
+    "cors": "^2.8.5",
     "crypto-js": "^4.0.0",
     "dotenv": "^8.2.0",
     "dotenv-cli": "^4.0.0",
