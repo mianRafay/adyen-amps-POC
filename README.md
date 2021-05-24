@@ -2,8 +2,6 @@
 
 This repository includes examples of PCI-compliant React UI integrations for online payments with Adyen. Within this demo app, you'll find a simplified version of an e-commerce website, complete with commented code to highlight key features and concepts of Adyen's API. Check out the underlying code to see how you can integrate Adyen to give your shoppers the option to pay with their preferred payment methods, all in a seamless checkout experience.
 
-![Card checkout demo](public/images/cardcheckout.gif)
-
 ## Supported Integrations
 
 **React + Node.js + Express** demos of the following client-side integrations are currently available in this repository:
@@ -32,7 +30,7 @@ Node.js 8.0+
 1. Clone this repo:
 
 ```
-git clone https://github.com/adyen-examples/adyen-react-online-payments.git
+https://github.com/mianRafay/adyen-amps-POC.git
 ```
 
 2. Navigate to the root directory and install dependencies:
@@ -64,9 +62,6 @@ npm run server
 
 To try out integrations with test card numbers and payment method details, see [Test card numbers](https://docs.adyen.com/development-resources/test-cards/test-card-numbers).
 
-**Note**
-
-This example doesn't authenticate the webhook, in actual practice you should protect the endpoint with basic authentication and set the same credentials on notification setting above.
 
 ## Available Scripts
 
@@ -121,7 +116,7 @@ To learn React, check out the [React documentation](https://reactjs.org/).
 **Call This Endpoint**: http://localhost:8080/api/placeOrder
 
 ## Sample Request
-`
+```
 {
     "accountInfo": {
         "acctCreateAccountRequestDetails": {
@@ -187,13 +182,17 @@ To learn React, check out the [React documentation](https://reactjs.org/).
         }
     }
 }
-`
+```
 ## Sample Response
-`
+```
 {
     "error": "false",
     "statusCode": 200,
     "orderId": "efa1b6ac-fcf8-4264-b244-b038cc0fe475",
     "returnUrl": "http://localhost:3000/checkout/dropin/efa1b6ac-fcf8-4264-b244-b038cc0fe475"
 }
+<<<<<<< HEAD
 `
+=======
+```
+>>>>>>> b847a118b4c42b17cb89969058463c05a2fda6b8
