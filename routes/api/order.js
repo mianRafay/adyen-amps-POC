@@ -258,11 +258,11 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
         // required for 3ds2 native flow
         allow3DS2: false,
       },
-      origin: "http://localhost:8080", // required for 3ds2 native flow
+      origin: "http://ec2-35-178-187-133.eu-west-2.compute.amazonaws.com:8080", // required for 3ds2 native flow
       browserInfo: req.body.browserInfo, // required for 3ds2
       shopperIP, // required by some issuers for 3ds2
       // we pass the orderRef in return URL to get paymentData during redirects
-      returnUrl: `http://localhost:8080/api/handleShopperRedirect?orderRef=${orderRef}`, // required for 3ds2 redirect flow
+      returnUrl: `http://ec2-35-178-187-133.eu-west-2.compute.amazonaws.com:8080/api/handleShopperRedirect?orderRef=${orderRef}`, // required for 3ds2 redirect flow
       paymentMethod: req.body.paymentMethod,
       billingAddress: req.body.billingAddress,
       shopperReference: req.params.orderId,
@@ -517,7 +517,7 @@ router.post("/orderManageOrder", middleware.apiValidator(), async (req, res) => 
       error: "false",
       statusCode: 200,
       orderId: order.dataValues.id,
-      returnUrl: "http://localhost:3000/checkout/dropin/" + order.dataValues.id,
+      returnUrl: "https://cim-adyen.aria-ntegra.com/checkout/dropin/" + order.dataValues.id,
     };
     res.json(response);
   } catch (error) {
