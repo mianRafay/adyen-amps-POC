@@ -2,6 +2,7 @@
   "name": "adyen-react-online-payments",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://cim-adyen.aria-ntegra.com",
   "dependencies": {
     "@adyen/adyen-web": "^3.17.1",
     "@adyen/api-library": "^6.0.0",
