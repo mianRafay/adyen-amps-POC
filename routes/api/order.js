@@ -272,6 +272,7 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
     });
 
     const { action } = response;
+    console.log(response,"response");
     const orderId = req.params.orderId;
     paymentStore[orderRef] = {
       amount: {
