@@ -277,7 +277,7 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
 
     paymentStore[orderRef] = {
       amount: {
-        currency
+        currency,
       },
       reference: orderRef,
     };
@@ -302,7 +302,8 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
         if (accountData.resultInfo.resultCode == 0 || accountData.resultInfo.resultCode == 200) {
           await OrderServices.updateOrderStatus(orderId, {
             orderStatus: "ACCOUNT CREATED",
-            ariaAccountID: accountData.acctCreateAccountResponseDetails.ariaAccountNo,
+            ariaAccountNo: accountData.acctCreateAccountResponseDetails.ariaAccountNo,
+            ariaAccountID: accountData.acctCreateAccountResponseDetails.ariaAccountID,
           });
           //default subscription
           this.addSubscription(orderId, accountData.acctCreateAccountResponseDetails.acctCreateAccountBillingGroupDetails[0], true).then(
@@ -337,6 +338,8 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
                           if (subsInformation.resultInfo.resultCode == 0) {
                             OrderServices.updateOrderStatus(orderId, {
                               orderStatus: "SUBSCRIPTION ADDED",
+                              ariaMPINo: subsInformation.subsManageSubscriptionResponseDetails[0].ariaPINo,
+                              ariaMPIID: subsInformation.subsManageSubscriptionResponseDetails[0].ariaPIID,
                             });
                           } else {
                             //subscription Failed
@@ -564,8 +567,13 @@ router.get("/orderRetrieveOrder", async (req, res) => {
       statusCode: 200,
       orderId: orderDetails.id,
       orderStatus: orderDetails.orderStatus,
-      orderStatusReason: orderDetails.orderFailureReason,
+      ariaMPINo: orderDetails.ariaMPINo,
+      ariaMPIID: orderDetails.ariaMPIID,
+      ariaAccountID: orderDetails.ariaAccountID,
+      ariaAccountNo: orderDetails.ariaAccountNo,
+      ariaBillingGroupID: orderDetails.ariaBillingGroupID,
       orderDetails: orderDetails.orderFailureReason ? orderDetails.orderDetails : "",
+      orderStatusReason: orderDetails.orderFailureReason,
     };
     res.json(response);
   } catch (error) {
