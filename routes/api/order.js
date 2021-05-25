@@ -259,11 +259,11 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
         "riskdata.skipRisk": "true",
         allow3DS2: false,
       },
-      origin: "https://api-adyen.aria-ntegra.com", // required for 3ds2 native flow
+      origin: process.env.ORIGIN_URL, // required for 3ds2 native flow
       browserInfo: req.body.browserInfo, // required for 3ds2
       shopperIP, // required by some issuers for 3ds2
       // we pass the orderRef in return URL to get paymentData during redirects
-      returnUrl: `https://api-adyen.aria-ntegra.com/api/handleShopperRedirect?orderRef=${orderRef}`, // required for 3ds2 redirect flow
+      returnUrl: `${process.env.ORIGIN_URL}/api/handleShopperRedirect?orderRef=${orderRef}`, // required for 3ds2 redirect flow
       paymentMethod: req.body.paymentMethod,
       billingAddress: req.body.billingAddress,
       shopperReference: req.params.orderId,
@@ -519,7 +519,7 @@ router.post("/orderManageOrder", middleware.apiValidator(), async (req, res) => 
       error: "false",
       statusCode: 200,
       orderId: order.dataValues.id,
-      returnUrl: "https://cim-adyen.aria-ntegra.com/checkout/dropin/" + order.dataValues.id,
+      returnUrl: `${process.env.CALLBACK_URL}/checkout/dropin/` + order.dataValues.id,
     };
     res.json(response);
   } catch (error) {
@@ -676,25 +676,25 @@ exports.addBillingGroup = async (paymentMethodId, orderId) => {
               backupPaymentMethodID: "",
             },
             statementContactDetails: {
-              firstName: orderDetails.accountInfo.firstName,
-              middleInitials: orderDetails.accountInfo.middleInitials,
-              lastName: orderDetails.accountInfo.lastName,
-              emailAddress: orderDetails.accountInfo.emailAddress,
-              fullName: orderDetails.accountInfo.company || orderDetails.accountInfo.firstName + " " + orderDetails.accountInfo.lastName,
-              homePhone: orderDetails.accountInfo.homePhone,
-              cellPhone: orderDetails.accountInfo.cellPhone,
-              workPhone: orderDetails.accountInfo.workPhone,
-              birthDate: orderDetails.accountInfo.birthDate,
-              addressLine1: orderDetails.accountInfo.addressLine1,
-              addressLine2: orderDetails.accountInfo.addressLine2,
-              addressLine3: orderDetails.accountInfo.addressLine3,
-              countryCode: orderDetails.accountInfo.countryCode,
-              postalCode: orderDetails.accountInfo.postalCode,
-              postalCity: orderDetails.accountInfo.postalCity,
-              addrLocality: orderDetails.accountInfo.addrLocality,
-              addrStateProv: orderDetails.accountInfo.addrStateProv,
-              streetName: orderDetails.accountInfo.streetName,
-              streetNo: orderDetails.accountInfo.streetNo,
+              firstName: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.firstName,
+              middleInitials: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.middleInitials,
+              lastName: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.lastName,
+              emailAddress: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.emailAddress,
+              fullName: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.company || orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.firstName + " " + orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.lastName,
+              homePhone: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.homePhone,
+              cellPhone: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.cellPhone,
+              workPhone: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.workPhone,
+              birthDate: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.birthDate,
+              addressLine1: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addressLine1,
+              addressLine2: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addressLine2,
+              addressLine3: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addressLine3,
+              countryCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.countryCode,
+              postalCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.postalCode,
+              postalCity: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.postalCity,
+              addrLocality: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addrLocality,
+              addrStateProv: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addrStateProv,
+              streetName: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.streetName,
+              streetNo: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.streetNo,
             },
           },
         },
@@ -723,31 +723,31 @@ exports.addDeliveryAddress = async (orderId) => {
           distManageAddrInfo: {
             distAddrType: 1,
             distAddrNo: null,
-            distAddrName: orderDetails.accountInfo.firstName + " " + orderDetails.accountInfo.lastName,
-            //   distAddrLine1: tempDeliverydata.distAddrLine1,
-            //   distAddrLine2: tempDeliverydata.distAddrLine2,
-            //   distAddrLine3: tempDeliverydata.distAddrLine3,
-            distAddrCountryCode: orderDetails.accountInfo.countryCode,
-            distAddrPostalCode: orderDetails.accountInfo.postalCode,
-            distAddrCity: orderDetails.accountInfo.postalCity,
-            // distAddInfo1: tempDeliverydata.distAddInfo1,
-            // distAddInfo2: tempDeliverydata.distAddInfo2,
-            // distAddInfo3: tempDeliverydata.distAddInfo3,
-            distAddrLocality: orderDetails.accountInfo.addrLocality,
-            distAddrStateProv: orderDetails.accountInfo.addrStateProv,
-            distStreetName: orderDetails.accountInfo.streetName,
-            distStreetNo: orderDetails.accountInfo.streetNo,
-            distFlatNo: orderDetails.accountInfo.flatNo,
-            distFlatSpec: orderDetails.accountInfo.flatSpec,
-            distFlatFloor: orderDetails.accountInfo.flatFloor,
-            distEntranceNo: orderDetails.accountInfo.entranceNo,
-            // distPublAddrNo: orderDetails.accountInfo.streetNo,
-            // distCoAddr: orderDetails.accountInfo.streetNo,
+            distAddrName: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.firstName + " " + orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.lastName,
+            //   distAddrLine1: tempDeliverydata.acctCreateAccountRequestDetails.accountContact.distAddrLine1,
+            //   distAddrLine2: tempDeliverydata.acctCreateAccountRequestDetails.accountContact.distAddrLine2,
+            //   distAddrLine3: tempDeliverydata.acctCreateAccountRequestDetails.accountContact.distAddrLine3,
+            distAddrCountryCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.countryCode,
+            distAddrPostalCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.postalCode,
+            distAddrCity: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.postalCity,
+            // distAddInfo1: tempDeliverydata.acctCreateAccountRequestDetails.accountContact.distAddInfo1,
+            // distAddInfo2: tempDeliverydata.acctCreateAccountRequestDetails.accountContact.distAddInfo2,
+            // distAddInfo3: tempDeliverydata.acctCreateAccountRequestDetails.accountContact.distAddInfo3,
+            distAddrLocality: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addrLocality,
+            distAddrStateProv: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addrStateProv,
+            distStreetName: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.streetName,
+            distStreetNo: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.streetNo,
+            distFlatNo: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.flatNo,
+            distFlatSpec: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.flatSpec,
+            distFlatFloor: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.flatFloor,
+            distEntranceNo: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.entranceNo,
+            // distPublAddrNo: orderDetails.acctCreateAccountRequestDetails.accountContact.accountInfo.streetNo,
+            // distCoAddr: orderDetails.acctCreateAccountRequestDetails.accountContact.accountInfo.streetNo,
           },
         },
       ],
     };
-    const addrUrl = "https://eu-stage05.workflow.ariasystems.net/bpa/Stampen_Dev01/PostDataToFlow/DistributionManagement/DistManageAddr";
+    const addrUrl = "https://eu-stage05.workflow.ariasystems.net/bpa/Stampen_Dev01/PostDataToFlow/ARIAPublishingSuite/DistributionManagement/DistManageAddr";
 
     this.sendRequest(params, addrUrl).then((response) => {
       resolve(response.body);
@@ -790,64 +790,126 @@ exports.addSubscription = async (orderId, billingInfo, isDefault = false) => {
           },
         ],
       };
+
+      this.sendSubscription(params).then((response) => {
+        resolve(response.body);
+      });
     } else {
-      params = {
-        subsManageSubscriptionAccountDetails: {
-          ariaAccountID: "",
-          ariaAccountNo: order.ariaAccountID,
-          ownerTitleCode: orderDetails.subsInfo.titleCode,
-          ownerTitleDomain: "",
-        },
-        subsManageSubscriptionDetails: [
-          {
-            actionDirective: "ADD",
-            subsManageSubscriptionDetailsADD: {
-              ariaPlanNo: orderDetails.subsInfo.ariaPlanNo,
-              ariaPlanID: orderDetails.subsInfo.ariaPlanID,
-              productType: orderDetails.subsInfo.productType,
-              productTypeVariant: "STANDARD",
-              titleCode: orderDetails.subsInfo.titleCode,
-              titleDomain: orderDetails.subsInfo.titleDomain,
-              ariaPlanRateScheduleID: orderDetails.subsInfo.ariaPlanRateScheduleID,
-              numberOfUnits: orderDetails.subsInfo.numberOfUnits,
-              ariaBillingGroupID: billingInfo.ariaBillingGroupID,
-              ariaDunningGroupID: billingInfo.ariaDunningGroupID,
-              currencyCode: "sek",
-              billingFreqRecurring: orderDetails.subsInfo.billingFreqRecurring,
-              billingFreqUsage: orderDetails.subsInfo.billingFreqUsage,
-              selectedDeliveryDays: "", //not in free one
-              selectedDeliveryCharges: "",
-              channelCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.channelCode,
-              sourceCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.sourceCode,
-              activationDate: null,
-              subsManageSubscriptionAddInfo: {
-                subscriptionInfo1: "",
-                subscriptionInfo2: "",
-                subscriptionInfo3: "",
-              },
-              subsManageSubscriptionCampaignDetail: orderDetails.subsInfo.subsManageSubscriptionCampaignDetail,
-              subsManageSubscriptionDiscountDetail: orderDetails.subsInfo.subsManageSubscriptionDiscountDetail,
-              //   subsManageSubscriptionAddrInfo: {
-              //     distEffectiveStartDate: "2019-02-03",
-              //     distEffectiveEndDate: null,
-              //     distAddrDeliveryList: [
-              //       { distAddrNo: 112233, distDeliveryDays: "DDDDDXX" },
-              //       { distAddrNo: 112234, distDeliveryDays: "XXXXXDD" },
-              //     ],
-              //   },
+      if (orderDetails.subsInfo.productType !== "DIGITAL") {
+        this.addDeliveryAddress(orderId).then((addressData) => {
+          params = {
+            subsManageSubscriptionAccountDetails: {
+              ariaAccountID: "",
+              ariaAccountNo: order.ariaAccountID,
+              ownerTitleCode: orderDetails.subsInfo.titleCode,
+              ownerTitleDomain: "",
             },
+            subsManageSubscriptionDetails: [
+              {
+                actionDirective: "ADD",
+                subsManageSubscriptionDetailsADD: {
+                  ariaPlanNo: orderDetails.subsInfo.ariaPlanNo,
+                  ariaPlanID: orderDetails.subsInfo.ariaPlanID,
+                  productType: orderDetails.subsInfo.productType,
+                  productTypeVariant: "STANDARD",
+                  titleCode: orderDetails.subsInfo.titleCode,
+                  titleDomain: orderDetails.subsInfo.titleDomain,
+                  ariaPlanRateScheduleID: orderDetails.subsInfo.ariaPlanRateScheduleID,
+                  numberOfUnits: orderDetails.subsInfo.numberOfUnits,
+                  ariaBillingGroupID: billingInfo.ariaBillingGroupID,
+                  ariaDunningGroupID: billingInfo.ariaDunningGroupID,
+                  currencyCode: "sek",
+                  billingFreqRecurring: orderDetails.subsInfo.billingFreqRecurring,
+                  billingFreqUsage: orderDetails.subsInfo.billingFreqUsage,
+                  selectedDeliveryDays: "", //not in free one
+                  selectedDeliveryCharges: "",
+                  channelCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.channelCode,
+                  sourceCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.sourceCode,
+                  activationDate: null,
+                  subsManageSubscriptionAddInfo: {
+                    subscriptionInfo1: "",
+                    subscriptionInfo2: "",
+                    subscriptionInfo3: "",
+                  },
+                  subsManageSubscriptionAddrInfo: {
+                    distEffectiveStartDate:orderDetails.subsInfo.dateEarliestDeliveryChange,
+                    distEffectiveEndDate: null,
+                    distAddrDeliveryList: [
+                      {
+                        distAddrNo: addressData.distManageAddrListResponse[0].distManageAddrInfo.distAddrNo,
+                        distDeliveryDays: "DDDDDDD",
+                      },
+                    ],
+                  },
+                  subsManageSubscriptionCampaignDetail: orderDetails.subsInfo.subsManageSubscriptionCampaignDetail,
+                  subsManageSubscriptionDiscountDetail: orderDetails.subsInfo.subsManageSubscriptionDiscountDetail,
+                },
+              },
+            ],
+          };
+          this.sendSubscription(params).then((response) => {
+            resolve(response.body);
+          });
+        });
+      } else {
+        params = {
+          subsManageSubscriptionAccountDetails: {
+            ariaAccountID: "",
+            ariaAccountNo: order.ariaAccountID,
+            ownerTitleCode: orderDetails.subsInfo.titleCode,
+            ownerTitleDomain: "",
           },
-        ],
-      };
+          subsManageSubscriptionDetails: [
+            {
+              actionDirective: "ADD",
+              subsManageSubscriptionDetailsADD: {
+                ariaPlanNo: orderDetails.subsInfo.ariaPlanNo,
+                ariaPlanID: orderDetails.subsInfo.ariaPlanID,
+                productType: orderDetails.subsInfo.productType,
+                productTypeVariant: "STANDARD",
+                titleCode: orderDetails.subsInfo.titleCode,
+                titleDomain: orderDetails.subsInfo.titleDomain,
+                ariaPlanRateScheduleID: orderDetails.subsInfo.ariaPlanRateScheduleID,
+                numberOfUnits: orderDetails.subsInfo.numberOfUnits,
+                ariaBillingGroupID: billingInfo.ariaBillingGroupID,
+                ariaDunningGroupID: billingInfo.ariaDunningGroupID,
+                currencyCode: "sek",
+                billingFreqRecurring: orderDetails.subsInfo.billingFreqRecurring,
+                billingFreqUsage: orderDetails.subsInfo.billingFreqUsage,
+                selectedDeliveryDays: "", //not in free one
+                selectedDeliveryCharges: "",
+                channelCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.channelCode,
+                sourceCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.sourceCode,
+                activationDate: null,
+                subsManageSubscriptionAddInfo: {
+                  subscriptionInfo1: "",
+                  subscriptionInfo2: "",
+                  subscriptionInfo3: "",
+                },
+                subsManageSubscriptionCampaignDetail: orderDetails.subsInfo.subsManageSubscriptionCampaignDetail,
+                subsManageSubscriptionDiscountDetail: orderDetails.subsInfo.subsManageSubscriptionDiscountDetail,
+              },
+            },
+          ],
+        };
+        this.sendSubscription(params).then((response) => {
+          resolve(response.body);
+        });
+      }
     }
+  });
+};
+exports.sendSubscription = async (params) => {
+  return new Promise((resolve, reject) => {
     const subsUrl =
       "https://eu-stage05.workflow.ariasystems.net/bpa/Stampen_Dev01/PostDataToFlow/ARIAMediaSuite/SubscriptionManagement/SubsManageSubscriptions";
 
     this.sendRequest(params, subsUrl).then((response) => {
-      resolve(response.body);
+      resolve(response);
     });
   });
 };
+
 /* ################# CLIENT ENDPOINTS ###################### */
 /* ################# UTILS ###################### */
 
