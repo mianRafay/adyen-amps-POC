@@ -693,7 +693,7 @@ exports.addBillingGroup = async (paymentMethodId, orderId) => {
       acctManageBillingGroupDetails: [
         {
           actionDirective: "ADD",
-          ariaAccountNo: order.ariaAccountID,
+          ariaAccountNo: order.ariaAccountNo,
           acctManageBillingGroupDetailsADD: {
             titleCode: orderDetails.subsInfo.titleCode,
             billingGroupStatus: "ACTIVE",
@@ -753,7 +753,7 @@ exports.addDeliveryAddress = async (orderId) => {
     const orderDetails = JSON.parse(order.orderDetails);
     params = {
       distManageAddrAccountInfo: {
-        ariaAccountNo: order.ariaAccountID,
+        ariaAccountNo: order.ariaAccountNo,
       },
       distManageAddrList: [
         {
@@ -805,7 +805,7 @@ exports.addSubscription = async (orderId, billingInfo, isDefault = false) => {
       params = {
         subsManageSubscriptionAccountDetails: {
           ariaAccountID: "",
-          ariaAccountNo: order.ariaAccountID,
+          ariaAccountNo: order.ariaAccountNo,
           ownerTitleCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.ownerTitleCode,
           ownerTitleDomain: "",
         },
@@ -842,7 +842,7 @@ exports.addSubscription = async (orderId, billingInfo, isDefault = false) => {
           params = {
             subsManageSubscriptionAccountDetails: {
               ariaAccountID: "",
-              ariaAccountNo: order.ariaAccountID,
+              ariaAccountNo: order.ariaAccountNo,
               ownerTitleCode: orderDetails.subsInfo.titleCode,
               ownerTitleDomain: "",
             },
@@ -874,12 +874,12 @@ exports.addSubscription = async (orderId, billingInfo, isDefault = false) => {
                     subscriptionInfo3: "",
                   },
                   subsManageSubscriptionAddrInfo: {
-                    distEffectiveStartDate: orderDetails.subsInfo.dateEarliestDeliveryChange,
+                    distEffectiveStartDate: orderDetails.subsInfo.deliverAddrChangeInfo.distEffectiveStartDate,
                     distEffectiveEndDate: null,
                     distAddrDeliveryList: [
                       {
                         distAddrNo: addressData.distManageAddrListResponse[0].distManageAddrInfo.distAddrNo,
-                        distDeliveryDays: "DDDDDDD",
+                        distDeliveryDays: orderDetails.subsInfo.deliverAddrChangeInfo.distDeliveryDays,
                       },
                     ],
                   },
@@ -897,7 +897,7 @@ exports.addSubscription = async (orderId, billingInfo, isDefault = false) => {
         params = {
           subsManageSubscriptionAccountDetails: {
             ariaAccountID: "",
-            ariaAccountNo: order.ariaAccountID,
+            ariaAccountNo: order.ariaAccountNo,
             ownerTitleCode: orderDetails.subsInfo.titleCode,
             ownerTitleDomain: "",
           },
