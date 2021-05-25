@@ -240,7 +240,7 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
   const currency = findCurrency(req.body.paymentMethod.type);
   // find shopper IP from request
   const shopperIP = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-
+  const orderId = req.params.orderId;
   try {
     // unique ref for the transaction
     const orderRef = uuid();
@@ -274,11 +274,10 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
 
     const { action } = response;
     console.log(response, "response");
-    const orderId = req.params.orderId;
+
     paymentStore[orderRef] = {
       amount: {
-        currency,
-        //  value: 1000
+        currency
       },
       reference: orderRef,
     };
@@ -341,31 +340,56 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
                             });
                           } else {
                             //subscription Failed
+                            OrderServices.updateOrderStatus(orderId, {
+                              orderFailureModule: "SUBSCRIPTION FAILED",
+                              orderFailureReason: subsInformation,
+                            });
                           }
                         });
                       } else {
                         //billing Group Failed
+                        OrderServices.updateOrderStatus(orderId, {
+                          orderFailureModule: "BILLING GROUP FAILED",
+                          orderFailureReason: billingGroupData,
+                        });
                       }
                     }
                   );
                 } else {
                   //paymentMethod failure
+                  OrderServices.updateOrderStatus(orderId, {
+                    orderFailureModule: "PAY GROUP ADDITION FAILED",
+                    orderFailureReason: paymentMethodData,
+                  });
                 }
               });
             }
           );
         } else {
           ///account failure
+          OrderServices.updateOrderStatus(orderId, {
+            orderFailureModule: "ACCOUNT ADDITION FAILED",
+            orderFailureReason: accountData,
+          });
         }
       });
     } else {
+      OrderServices.updateOrderStatus(orderId, {
+        orderFailureModule: "ADEYN FLOW FAILED",
+        orderFailureReason: response,
+      });
     }
     //call method to create account and return data
 
     //send request to create billing group and update the status
     res.json([response, orderRef]); // sending a tuple with orderRef as well to be used in in submitAdditionalDetails if needed
   } catch (err) {
+    OrderServices.updateOrderStatus(orderId, {
+      orderFailureModule: "ADEYN FLOW FAILED",
+      orderFailureReason: response,
+    });
     console.error(`Error: ${err.message}, error code: ${err.errorCode}`);
+
     res.status(err.statusCode).json(err.message);
   }
 });
@@ -540,6 +564,8 @@ router.get("/orderRetrieveOrder", async (req, res) => {
       statusCode: 200,
       orderId: orderDetails.id,
       orderStatus: orderDetails.orderStatus,
+      orderStatusReason: orderDetails.orderFailureReason,
+      orderDetails: orderDetails.orderFailureReason ? orderDetails.orderDetails : "",
     };
     res.json(response);
   } catch (error) {
@@ -680,7 +706,11 @@ exports.addBillingGroup = async (paymentMethodId, orderId) => {
               middleInitials: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.middleInitials,
               lastName: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.lastName,
               emailAddress: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.emailAddress,
-              fullName: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.company || orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.firstName + " " + orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.lastName,
+              fullName:
+                orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.company ||
+                orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.firstName +
+                  " " +
+                  orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.lastName,
               homePhone: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.homePhone,
               cellPhone: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.cellPhone,
               workPhone: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.workPhone,
@@ -723,7 +753,10 @@ exports.addDeliveryAddress = async (orderId) => {
           distManageAddrInfo: {
             distAddrType: 1,
             distAddrNo: null,
-            distAddrName: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.firstName + " " + orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.lastName,
+            distAddrName:
+              orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.firstName +
+              " " +
+              orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.lastName,
             //   distAddrLine1: tempDeliverydata.acctCreateAccountRequestDetails.accountContact.distAddrLine1,
             //   distAddrLine2: tempDeliverydata.acctCreateAccountRequestDetails.accountContact.distAddrLine2,
             //   distAddrLine3: tempDeliverydata.acctCreateAccountRequestDetails.accountContact.distAddrLine3,
@@ -747,7 +780,8 @@ exports.addDeliveryAddress = async (orderId) => {
         },
       ],
     };
-    const addrUrl = "https://eu-stage05.workflow.ariasystems.net/bpa/Stampen_Dev01/PostDataToFlow/ARIAPublishingSuite/DistributionManagement/DistManageAddr";
+    const addrUrl =
+      "https://eu-stage05.workflow.ariasystems.net/bpa/Stampen_Dev01/PostDataToFlow/ARIAPublishingSuite/DistributionManagement/DistManageAddr";
 
     this.sendRequest(params, addrUrl).then((response) => {
       resolve(response.body);
@@ -832,7 +866,7 @@ exports.addSubscription = async (orderId, billingInfo, isDefault = false) => {
                     subscriptionInfo3: "",
                   },
                   subsManageSubscriptionAddrInfo: {
-                    distEffectiveStartDate:orderDetails.subsInfo.dateEarliestDeliveryChange,
+                    distEffectiveStartDate: orderDetails.subsInfo.dateEarliestDeliveryChange,
                     distEffectiveEndDate: null,
                     distAddrDeliveryList: [
                       {

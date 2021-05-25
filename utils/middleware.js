@@ -4,7 +4,7 @@ const Crypto = require("crypto-js");
 const middleware = {
   apiValidator: () => {
     return (req, res, next) => {
-      const token = req.body.authDetails?.key || req.query.key;
+      const token = req.body["x-access-token"] || req.query["x-access-token"] || req.headers["x-access-token"];
       //if token is not there just send back token is missing
       if (!token)
         return res.status(401).json({
