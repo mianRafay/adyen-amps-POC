@@ -345,7 +345,7 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
                             //subscription Failed
                             OrderServices.updateOrderStatus(orderId, {
                               orderFailureModule: "SUBSCRIPTION FAILED",
-                              orderFailureReason: subsInformation,
+                              orderFailureReason: JSON.stringify(subsInformation),
                             });
                           }
                         });
@@ -353,7 +353,7 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
                         //billing Group Failed
                         OrderServices.updateOrderStatus(orderId, {
                           orderFailureModule: "BILLING GROUP FAILED",
-                          orderFailureReason: billingGroupData,
+                          orderFailureReason: JSON.stringify(billingGroupData),
                         });
                       }
                     }
@@ -362,7 +362,7 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
                   //paymentMethod failure
                   OrderServices.updateOrderStatus(orderId, {
                     orderFailureModule: "PAY GROUP ADDITION FAILED",
-                    orderFailureReason: paymentMethodData,
+                    orderFailureReason: JSON.stringify(paymentMethodData),
                   });
                 }
               });
@@ -372,14 +372,14 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
           ///account failure
           OrderServices.updateOrderStatus(orderId, {
             orderFailureModule: "ACCOUNT ADDITION FAILED",
-            orderFailureReason: accountData,
+            orderFailureReason: JSON.stringify(accountData),
           });
         }
       });
     } else {
       OrderServices.updateOrderStatus(orderId, {
         orderFailureModule: "ADEYN FLOW FAILED",
-        orderFailureReason: response,
+        orderFailureReason: JSON.stringify(response),
       });
     }
     //call method to create account and return data
@@ -389,7 +389,7 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
   } catch (err) {
     OrderServices.updateOrderStatus(orderId, {
       orderFailureModule: "ADEYN FLOW FAILED",
-      orderFailureReason: response,
+      orderFailureReason: JSON.stringify(response),
     });
     console.error(`Error: ${err.message}, error code: ${err.errorCode}`);
 
@@ -572,7 +572,7 @@ router.get("/orderRetrieveOrder", async (req, res) => {
       ariaAccountID: orderDetails.ariaAccountID,
       ariaAccountNo: orderDetails.ariaAccountNo,
       ariaBillingGroupID: orderDetails.ariaBillingGroupID,
-      orderDetails: orderDetails.orderFailureReason ? orderDetails.orderDetails : "",
+      orderDetails: orderDetails.orderFailureReason ? JSON.parse(orderDetails.orderDetails) : "",
       orderStatusReason: orderDetails.orderFailureReason,
     };
     res.json(response);
