@@ -573,7 +573,7 @@ router.get("/orderRetrieveOrder", async (req, res) => {
       ariaAccountNo: orderDetails.ariaAccountNo,
       ariaBillingGroupID: orderDetails.ariaBillingGroupID,
       orderDetails: orderDetails.orderFailureReason ? JSON.parse(orderDetails.orderDetails) : "",
-      orderStatusReason: orderDetails.orderFailureReason,
+      orderStatusReason: orderDetails.orderFailureModule,
     };
     res.json(response);
   } catch (error) {
