@@ -548,10 +548,13 @@ exports.createOrder = async (req) => {
   };
   const order = await OrderServices.createOrder(dbParams);
   const response = {
-    error: "false",
-    statusCode: 200,
-    orderId: order.dataValues.id,
-    returnUrl: `${process.env.CALLBACK_URL}/checkout/dropin/` + order.dataValues.id,
+    resultInfo: {
+      error: "false",
+      resultCode: 200,
+      resultText: `Order # ${dbParams.id} is created successfully`,
+      orderId: order.dataValues.id,
+      returnUrl: `${process.env.CALLBACK_URL}/checkout/dropin/` + order.dataValues.id,
+    },
   };
   return response;
 };
@@ -565,10 +568,13 @@ exports.createOrderForExistingAccount = async (req) => {
   };
   const order = await OrderServices.createOrder(dbParams);
   const response = {
-    error: "false",
-    statusCode: 200,
-    orderId: order.dataValues.id,
-    returnUrl: `${process.env.CALLBACK_URL}/checkout/dropin/` + order.dataValues.id,
+    resultInfo: {
+      error: "false",
+      resultCode: 200,
+      resultText: `Order # ${dbParams.id} is created successfully against Account No: ${requestData.accountInfo.acctCreateAccountRequestDetails.ariaAccountNo} `,
+      orderId: order.dataValues.id,
+      returnUrl: `${process.env.CALLBACK_URL}/checkout/dropin/` + order.dataValues.id,
+    },
   };
   return response;
 };
@@ -582,16 +588,14 @@ exports.createOrderForExistingBilling = async (req) => {
     ariaBillingGroupID: requestData.subsInfo.ariaBillingGroupID,
   };
   const order = await OrderServices.createOrder(dbParams);
-  const subscriptionData = await this.addSubscription(
-    order.dataValues.id,
-    order.dataValues,
-    requestData.subsInfo,
-    false
-  );
+  const subscriptionData = await this.addSubscription(order.dataValues.id, order.dataValues, requestData.subsInfo, false);
   const response = {
-    error: "false",
-    statusCode: 200,
-    orderId: order.dataValues.id,
+    resultInfo: {
+      error: "false",
+      resultCode: 200,
+      resultText: `Order # ${dbParams.id} successfully added subscription`,
+      orderId: dbParams.id,
+    },
   };
 
   return response;
@@ -606,9 +610,12 @@ exports.deleteOrder = async (req) => {
     // let dbParams = req.bo12.dy.manageOrderDetails.orderInfo;
     const order = await OrderServices.updateOrderStatus(requestParams.orderID, dbParams);
     const response = {
-      error: "false",
-      statusCode: 200,
-      orderId: dbParams.id,
+      resultInfo: {
+        error: "false",
+        resultCode: 200,
+        resultText: `Order # ${dbParams.id} deleted successfully`,
+        orderId: dbParams.id,
+      },
     };
     return response;
   } catch (err) {
@@ -625,9 +632,12 @@ exports.modifyOrder = async (req) => {
     // let dbParams = req.bo12.dy.manageOrderDetails.orderInfo;
     await OrderServices.updateOrderStatus(dbParams.id, dbParams);
     const response = {
-      error: "false",
-      statusCode: 200,
-      orderId: dbParams.id,
+      resultInfo: {
+        error: "false",
+        resultCode: 200,
+        resultText: `Order # ${dbParams.id} modified successfully`,
+        orderId: dbParams.id,
+      },
     };
     return response;
   } catch (err) {

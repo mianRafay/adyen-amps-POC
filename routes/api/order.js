@@ -339,17 +339,19 @@ router.get("/orderRetrieveOrder", async (req, res) => {
     const orderId = req.query.orderId;
     const orderDetails = await OrderServices.getRequestParamsByOrderId(orderId);
     const response = {
-      error: "false",
-      statusCode: 200,
-      orderId: orderDetails.id,
-      orderStatus: orderDetails.orderStatus,
-      ariaMPINo: orderDetails.ariaMPINo,
-      ariaMPIID: orderDetails.ariaMPIID,
-      ariaAccountID: orderDetails.ariaAccountID,
-      ariaAccountNo: orderDetails.ariaAccountNo,
-      ariaBillingGroupID: orderDetails.ariaBillingGroupID,
-      orderDetails: orderDetails.orderFailureReason ? JSON.parse(orderDetails.orderDetails) : "",
-      orderStatusReason: orderDetails.orderFailureModule,
+      resultInfo: {
+        error: "false",
+        statusCode: 200,
+        orderId: orderDetails.id,
+        orderStatus: orderDetails.orderStatus,
+        ariaMPINo: orderDetails.ariaMPINo,
+        ariaMPIID: orderDetails.ariaMPIID,
+        ariaAccountID: orderDetails.ariaAccountID,
+        ariaAccountNo: orderDetails.ariaAccountNo,
+        ariaBillingGroupID: orderDetails.ariaBillingGroupID,
+        orderDetails: orderDetails.orderFailureReason ? JSON.parse(orderDetails.orderDetails) : "",
+        orderStatusReason: orderDetails.orderFailureModule,
+      },
     };
     res.json(response);
   } catch (error) {
