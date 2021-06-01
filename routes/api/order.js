@@ -104,45 +104,49 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
       });
 
       const orderData = await OrderServices.getRequestParamsByOrderId(orderId);
-
-      switch (JSON.parse(orderData.orderDetails).actionDirective) {
-        case "ADD": {
-          const accountCreateData = await orderController.createAccount(orderId, orderData);
-          const updatedOrderData = await OrderServices.getRequestParamsByOrderId(orderId);
-          const defaultSub = await orderController.addSubscription(
-            orderId,
-            updatedOrderData,
-            accountCreateData.acctCreateAccountResponseDetails.acctCreateAccountBillingGroupDetails[0],
-            true
-          );
-          const paymentMethodData = await orderController.addPaymethod(updatedOrderData, orderId);
-          const billingGroupData = await orderController.addBillingGroup(
-            orderId,
-            paymentMethodData.acctManagePayMethodResponseDetails.ariaPayMethodID,
-            updatedOrderData
-          );
-          const subscriptionData = await orderController.addSubscription(
-            orderId,
-            updatedOrderData,
-            billingGroupData.acctManageBillingGroupResponseDetails[0].billingGroupResponseINFO,
-            false
-          );
-        }
-        case "ADD-EXISTING-ACCT": {
-          const updatedOrderData = await OrderServices.getRequestParamsByOrderId(orderId);
-          const paymentMethodData = await orderController.addPaymethod(updatedOrderData, orderId);
-          const billingGroupData = await orderController.addBillingGroup(
-            orderId,
-            paymentMethodData.acctManagePayMethodResponseDetails.ariaPayMethodID,
-            updatedOrderData
-          );
-          const subscriptionData = await orderController.addSubscription(
-            orderId,
-            updatedOrderData,
-            billingGroupData.acctManageBillingGroupResponseDetails[0].billingGroupResponseINFO,
-            false
-          );
-        }
+      const actionDirective = await JSON.parse(orderData.orderDetails).actionDirective;
+      switch (actionDirective) {
+        case "ADD":
+          {
+            const accountCreateData = await orderController.createAccount(orderId, orderData);
+            const updatedOrderData = await OrderServices.getRequestParamsByOrderId(orderId);
+            const defaultSub = await orderController.addSubscription(
+              orderId,
+              updatedOrderData,
+              accountCreateData.acctCreateAccountResponseDetails.acctCreateAccountBillingGroupDetails[0],
+              true
+            );
+            const paymentMethodData = await orderController.addPaymethod(updatedOrderData, orderId);
+            const billingGroupData = await orderController.addBillingGroup(
+              orderId,
+              paymentMethodData.acctManagePayMethodResponseDetails.ariaPayMethodID,
+              updatedOrderData
+            );
+            const subscriptionData = await orderController.addSubscription(
+              orderId,
+              updatedOrderData,
+              billingGroupData.acctManageBillingGroupResponseDetails[0].billingGroupResponseINFO,
+              false
+            );
+          }
+          break;
+        case "ADD-EXISTING-ACCT":
+          {
+            const updatedOrderData = await OrderServices.getRequestParamsByOrderId(orderId);
+            const paymentMethodData = await orderController.addPaymethod(updatedOrderData, orderId);
+            const billingGroupData = await orderController.addBillingGroup(
+              orderId,
+              paymentMethodData.acctManagePayMethodResponseDetails.ariaPayMethodID,
+              updatedOrderData
+            );
+            const subscriptionData = await orderController.addSubscription(
+              orderId,
+              updatedOrderData,
+              billingGroupData.acctManageBillingGroupResponseDetails[0].billingGroupResponseINFO,
+              false
+            );
+          }
+          break;
       }
       res.send([response, orderRef]);
     } else {
