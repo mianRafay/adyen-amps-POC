@@ -1,5 +1,11 @@
+const moment = require("moment");
+const request = require("request");
+const CryptoJS = require("crypto-js");
+const btoa = require("btoa");
+const util = require("util");
+const requestPromise = util.promisify(request);
 const common = {
-     /**
+  /**
    * @name  utf16Converter
    * @param  {string} {str}
    * @return {string | undefined}
@@ -35,9 +41,7 @@ const common = {
         case 14:
           char2 = str.charCodeAt(i++);
           char3 = str.charCodeAt(i++);
-          out += String.fromCharCode(
-            ((c & 0x0f) << 12) | ((char2 & 0x3f) << 6) | ((char3 & 0x3f) << 0)
-          );
+          out += String.fromCharCode(((c & 0x0f) << 12) | ((char2 & 0x3f) << 6) | ((char3 & 0x3f) << 0));
           break;
       }
     }
@@ -65,7 +69,86 @@ const common = {
     }
     return str;
   },
+  /**
+   * @name   generateToken
+   * @param  {object} {authKey}
+   * @param  {object} {clientNo}
+   * @param  {object} {ariaAccountID}
+   * @param  {object} {ariaAccountNo}
+   * @param  {object} {UserID}
+   * @return {string} amps authentication token
+   * @summary by using differtnt security algorithm generate
+   * authentication token
+   *
+   */
 
+  generateToken: async (authKey, clientNo, requestDateTime, ariaAccountID, ariaAccountNo, UserID) => {
+    const concatString = clientNo + "|" + requestDateTime + "|" + ariaAccountID + "|" + ariaAccountNo + "|" + UserID + "|" + authKey;
+    return btoa(common.hex2a(CryptoJS.SHA256(common.utf16Converter(concatString)).toString()));
+  },
+
+  getNotNullObject: (params)=>{
+    const filledProps = params.map(el => {
+        // Loop the property names of `el`, creating a new object
+        // with the ones whose values aren't `null`.
+        // `reduce` is commonly used for doing this:
+        return Object.keys(el).reduce((newObj, key) => {
+          const value = el[key];
+          if (value !== null) {
+            newObj[key] = value;
+          }
+          return newObj;
+        }, {});
+      });
+
+      return filledProps;
+  },
+  /** ################ AMPS Methods ########################## */
+  /**
+   * @name   sendRequest
+   * @param  {object} {params}
+   * @return {object | undefined}
+   * @summary make request and attach security header
+   *
+   */
+
+  sendRequest: async (additionalParams, endPoint) => {
+    const authToken = "gIW6EsgWyQmkkIVLZaKG";
+    const ampsUserId = "75";
+    const gmtTime = moment().utc().format("YYYY-MM-DDTHH:mm:ss") + "Z";
+    const signatureValue = await common.generateToken(authToken, ampsUserId, gmtTime, "", 0, "", 1);
+
+    try {
+      let params = {
+        msgAuthDetails: {
+          clientNo: ampsUserId,
+          requestDateTime: gmtTime,
+          signatureValue: signatureValue,
+          ariaAccountID: "",
+          ariaAccountNo: 0,
+          UserID: "",
+          signatureVersion: 1,
+        },
+      };
+      if (additionalParams) {
+        params = { ...params, ...additionalParams };
+      }
+
+      const clientServerOptions = {
+        uri: endPoint,
+        json: true,
+        body: params,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      };
+      const ampsRequest = await requestPromise(clientServerOptions);
+      return ampsRequest.body;
+    } catch (err) {
+      console.error(err);
+    }
+  },
 };
 
 module.exports = common;

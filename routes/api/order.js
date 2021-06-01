@@ -5,11 +5,6 @@
  */
 const { Client, Config, CheckoutAPI, Modification, hmacValidator } = require("@adyen/api-library");
 const router = require("express").Router();
-const moment = require("moment");
-const CryptoJS = require("crypto-js");
-const btoa = require("btoa");
-const request = require("request");
-const common = require("../../utils/common");
 const OrderServices = require("../../services/orders");
 const { uuid } = require("uuidv4");
 // Adyen Node.js API library boilerplate (configuration, etc.)
@@ -20,8 +15,9 @@ client.setEnvironment("TEST");
 const checkout = new CheckoutAPI(client);
 const modification = new Modification(client);
 const validator = new hmacValidator();
-const path = require("path");
 const middleware = require("../../utils/middleware");
+const { ORDER_STATUS } = require("../../utils/constants");
+const orderController = require("../../controllers/orders");
 
 // A temporary store to keep payment data to be sent in additional payment details and redirects.
 // This is more secure than a cookie. In a real application this should be in a database.
@@ -29,195 +25,6 @@ const paymentDataStore = {};
 // in memory store for transaction
 const paymentStore = {};
 const originStore = {};
-const defaultSubscription = {
-  offeringDetail: {
-    productTypeVariant: "STANDARD",
-    productTypeVariantCnt: 0,
-    productPriceModel: "STANDARD",
-    titleCode: "SM",
-    offeringSeqNo: 1,
-    productType: "DIGITAL",
-    offeringSortSequence: 0,
-    offeringUUID: "cbd543e4-d9a9-481e-8add-22e43b7a2fb1",
-    dateEarliestDeliveryChange: "",
-    titleDomain: "stampen.se",
-    isPurchaseRestricted: false,
-    offeringType: "PRODUCT",
-    isDeliveryRestricted: false,
-    isPaymentRestricted: true,
-    paymentMethodReqd: [
-      {
-        paymentMethodReqd: "ANY",
-      },
-    ],
-    offeringNameTranslations: {
-      solmRefTransNo: "0",
-      solmTranslationEntry: [
-        {
-          solmLocaleID: "SE-SVENSKA",
-          solmRefTransText: null,
-        },
-        {
-          solmLocaleID: "SE-SVENSKA-WEB",
-          solmRefTransText: null,
-        },
-        {
-          solmLocaleID: "SE-SVENSKA-WEB-SHORT",
-          solmRefTransText: null,
-        },
-      ],
-    },
-    offeringDescTranslations: {
-      solmRefTransNo: "0",
-      solmTranslationEntry: [
-        {
-          solmLocaleID: "SE-SVENSKA",
-          solmRefTransText: null,
-        },
-        {
-          solmLocaleID: "SE-SVENSKA-WEB",
-          solmRefTransText: null,
-        },
-        {
-          solmLocaleID: "SE-SVENSKA-WEB-SHORT",
-          solmRefTransText: null,
-        },
-      ],
-    },
-    offeringDiscountApplied: false,
-  },
-  offeringPlanDetail: {
-    offeringPlanRates: [
-      {
-        ariaScheduleNo: "379955",
-        costVAT: null,
-        costInclVAT: null,
-        ariaScheduleName: "SM-C-DIGITAL-FREECUSTOMER-SEK-01",
-        discountedCostExclVAT: null,
-        ariaScheduleID: "SM-C-DIGITAL-FREECUSTOMER-SEK-01",
-        currencyCode: "sek",
-        scheduleNameTranslations: {
-          solmRefTransNo: "980000379955",
-          solmTranslationEntry: [
-            {
-              solmLocaleID: "System_US_English_locale",
-              solmRefTransText: "SM-C-DIGITAL-FREECUSTOMER-SEK-01",
-            },
-          ],
-        },
-        offeringPlanRateServices: [],
-        billingFreqUsage: 1,
-        isDefault: true,
-        billingFreqRecurring: 1,
-        costExclVAT: null,
-        discountedCostVAT: null,
-        discountedCostInclVAT: null,
-      },
-    ],
-    offeringEligibleForBundles: false,
-    offeringPlanRateOverview: [],
-    offeringEligibleForDiscounts: false,
-    planAccessDays: "DDDDDDD",
-    subsGetEligibleOfferingsSharingInfo: null,
-    ariaPlanID: "SM-C-DIGITAL-FREECUSTOMER",
-    subsGetEligibleOfferingsPrimaryTitle: [
-      {
-        titleNameTranslations: {
-          solmRefTransNo: "17",
-          solmTranslationEntry: [
-            {
-              solmLocaleID: "SE-SVENSKA",
-              solmRefTransText: "Stampen Media",
-            },
-          ],
-        },
-        titleDescTranslations: {
-          solmRefTransNo: "18",
-          solmTranslationEntry: [
-            {
-              solmLocaleID: "SE-SVENSKA",
-              solmRefTransText: "Stampen title code to support the News Letter product",
-            },
-          ],
-        },
-        titleCode: "SM",
-        titleName: "Stampen Media",
-        titleDesc: "Stampen Media",
-      },
-    ],
-    subsGetEligibleOfferingsDigitalTitle: [
-      {
-        subsGetEligibleOfferingsAccessFeatures: [
-          {
-            accessFeature: "NEWSLETTER",
-          },
-        ],
-        subsGetEligibleOfferingsTitleDetails: {
-          titleNameTranslations: {
-            solmRefTransNo: "17",
-            solmTranslationEntry: [
-              {
-                solmLocaleID: "SE-SVENSKA",
-                solmRefTransText: "Stampen Media",
-              },
-            ],
-          },
-          titleDescTranslations: {
-            solmRefTransNo: "18",
-            solmTranslationEntry: [
-              {
-                solmLocaleID: "SE-SVENSKA",
-                solmRefTransText: "Stampen title code to support the News Letter product",
-              },
-            ],
-          },
-          titleDesc: "Stampen Media",
-          titleName: "Stampen Media",
-          titleCode: "SM",
-        },
-      },
-    ],
-    ariaPlanNo: 104172,
-    planNameTranslations: {
-      solmRefTransNo: "0",
-      solmTranslationEntry: [
-        {
-          solmLocaleID: "SE-SVENSKA",
-          solmRefTransText: null,
-        },
-        {
-          solmLocaleID: "SE-SVENSKA-WEB",
-          solmRefTransText: null,
-        },
-        {
-          solmLocaleID: "SE-SVENSKA-WEB-SHORT",
-          solmRefTransText: null,
-        },
-      ],
-    },
-    planDescTranslations: {
-      solmRefTransNo: "0",
-      solmTranslationEntry: [
-        {
-          solmLocaleID: "SE-SVENSKA",
-          solmRefTransText: null,
-        },
-        {
-          solmLocaleID: "SE-SVENSKA-WEB",
-          solmRefTransText: null,
-        },
-        {
-          solmLocaleID: "SE-SVENSKA-WEB-SHORT",
-          solmRefTransText: null,
-        },
-      ],
-    },
-  },
-  offeringCampaignDetail: null,
-  offeringCampaignList: [],
-  offeringBundleDetail: null,
-  offeringDiscountDetail: null,
-};
 
 router.get("/getPaymentDataStore", async (req, res) => res.json(paymentStore));
 
@@ -273,8 +80,6 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
     });
 
     const { action } = response;
-    console.log(response, "response");
-
     paymentStore[orderRef] = {
       amount: {
         currency,
@@ -294,102 +99,62 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
     }
     //update db that payment initiated
     if (response.resultCode === "Authorised") {
-      OrderServices.updateOrderStatus(orderId, {
-        orderStatus: "PAYMENT AUTHORIZED",
+      await OrderServices.updateOrderStatus(orderId, {
+        orderStatus: ORDER_STATUS.SUCCESS.PAYMENT,
       });
-      //send request to create account and then update the status in db
-      this.createAccount(orderId).then(async (accountData) => {
-        if (accountData.resultInfo.resultCode == 0 || accountData.resultInfo.resultCode == 200) {
-          await OrderServices.updateOrderStatus(orderId, {
-            orderStatus: "ACCOUNT CREATED",
-            ariaAccountNo: accountData.acctCreateAccountResponseDetails.ariaAccountNo,
-            ariaAccountID: accountData.acctCreateAccountResponseDetails.ariaAccountID,
-          });
-          //default subscription
-          this.addSubscription(orderId, accountData.acctCreateAccountResponseDetails.acctCreateAccountBillingGroupDetails[0], true).then(
-            (defaultSub) => {
-              //add Payment Method
-              this.addPaymethod(
-                accountData.acctCreateAccountResponseDetails.ariaAccountNo,
-                orderId
-                //response.additionalData["recurring.recurringDetailReference"]
-              ).then((paymentMethodData) => {
-                if (paymentMethodData.resultInfo.resultCode == 0) {
-                  OrderServices.updateOrderStatus(orderId, {
-                    orderStatus: "PAYMENT METHOD ADDED",
-                  });
 
-                  //add Billing Group
-                  this.addBillingGroup(paymentMethodData.acctManagePayMethodResponseDetails.ariaPayMethodID, orderId).then(
-                    (billingGroupData) => {
-                      if (billingGroupData.resultInfo.resultCode == 0) {
-                        OrderServices.updateOrderStatus(orderId, {
-                          orderStatus: "BILLING GROUP ADDED",
-                          ariaBillingGroupID:
-                            billingGroupData.acctManageBillingGroupResponseDetails[0].billingGroupResponseINFO.ariaBillingGroupID,
-                        });
+      const orderData = await OrderServices.getRequestParamsByOrderId(orderId);
 
-                        //add subscription
-                        this.addSubscription(
-                          orderId,
-                          billingGroupData.acctManageBillingGroupResponseDetails[0].billingGroupResponseINFO,
-                          false
-                        ).then((subsInformation) => {
-                          if (subsInformation.resultInfo.resultCode == 0) {
-                            OrderServices.updateOrderStatus(orderId, {
-                              orderStatus: "SUBSCRIPTION ADDED",
-                              ariaMPINo: subsInformation.subsManageSubscriptionResponseDetails[0].ariaPINo,
-                              ariaMPIID: subsInformation.subsManageSubscriptionResponseDetails[0].ariaPIID,
-                            });
-                          } else {
-                            //subscription Failed
-                            OrderServices.updateOrderStatus(orderId, {
-                              orderFailureModule: "SUBSCRIPTION FAILED",
-                              orderFailureReason: JSON.stringify(subsInformation),
-                            });
-                          }
-                        });
-                      } else {
-                        //billing Group Failed
-                        OrderServices.updateOrderStatus(orderId, {
-                          orderFailureModule: "BILLING GROUP FAILED",
-                          orderFailureReason: JSON.stringify(billingGroupData),
-                        });
-                      }
-                    }
-                  );
-                } else {
-                  //paymentMethod failure
-                  OrderServices.updateOrderStatus(orderId, {
-                    orderFailureModule: "PAY GROUP ADDITION FAILED",
-                    orderFailureReason: JSON.stringify(paymentMethodData),
-                  });
-                }
-              });
-            }
+      switch (JSON.parse(orderData.orderDetails).actionDirective) {
+        case "ADD": {
+          const accountCreateData = await orderController.createAccount(orderId, orderData);
+          const updatedOrderData = await OrderServices.getRequestParamsByOrderId(orderId);
+          const defaultSub = await orderController.addSubscription(
+            orderId,
+            updatedOrderData,
+            accountCreateData.acctCreateAccountResponseDetails.acctCreateAccountBillingGroupDetails[0],
+            true
           );
-        } else {
-          ///account failure
-          OrderServices.updateOrderStatus(orderId, {
-            orderFailureModule: "ACCOUNT ADDITION FAILED",
-            orderFailureReason: JSON.stringify(accountData),
-          });
+          const paymentMethodData = await orderController.addPaymethod(updatedOrderData, orderId);
+          const billingGroupData = await orderController.addBillingGroup(
+            orderId,
+            paymentMethodData.acctManagePayMethodResponseDetails.ariaPayMethodID,
+            updatedOrderData
+          );
+          const subscriptionData = await orderController.addSubscription(
+            orderId,
+            updatedOrderData,
+            billingGroupData.acctManageBillingGroupResponseDetails[0].billingGroupResponseINFO,
+            false
+          );
         }
-      });
+        case "ADD-EXISTING-ACCT": {
+          const updatedOrderData = await OrderServices.getRequestParamsByOrderId(orderId);
+          const paymentMethodData = await orderController.addPaymethod(updatedOrderData, orderId);
+          const billingGroupData = await orderController.addBillingGroup(
+            orderId,
+            paymentMethodData.acctManagePayMethodResponseDetails.ariaPayMethodID,
+            updatedOrderData
+          );
+          const subscriptionData = await orderController.addSubscription(
+            orderId,
+            updatedOrderData,
+            billingGroupData.acctManageBillingGroupResponseDetails[0].billingGroupResponseINFO,
+            false
+          );
+        }
+      }
+      res.send([response, orderRef]);
     } else {
       OrderServices.updateOrderStatus(orderId, {
         orderFailureModule: "ADEYN FLOW FAILED",
         orderFailureReason: JSON.stringify(response),
       });
     }
-    //call method to create account and return data
-
-    //send request to create billing group and update the status
-    res.json([response, orderRef]); // sending a tuple with orderRef as well to be used in in submitAdditionalDetails if needed
   } catch (err) {
     OrderServices.updateOrderStatus(orderId, {
       orderFailureModule: "ADEYN FLOW FAILED",
-      orderFailureReason: JSON.stringify(response),
+      orderFailureReason: JSON.stringify(err),
     });
     console.error(`Error: ${err.message}, error code: ${err.errorCode}`);
 
@@ -536,18 +301,25 @@ router.post("/webhook/notification", async (req, res) => {
  */
 router.post("/orderManageOrder", middleware.apiValidator(), async (req, res) => {
   //send back an order ID
+  let response;
   try {
-    const dbParams = {
-      orderDetails: JSON.stringify(req.body.manageOrderDetails),
-      orderStatus: "INITIATED",
-    };
-    const order = await OrderServices.createOrder(dbParams);
-    const response = {
-      error: "false",
-      statusCode: 200,
-      orderId: order.dataValues.id,
-      returnUrl: `${process.env.CALLBACK_URL}/checkout/dropin/` + order.dataValues.id,
-    };
+    switch (req.body.manageOrderDetails.actionDirective) {
+      case "MODIFY":
+        response = await orderController.modifyOrder(req);
+        break;
+      case "REMOVE":
+        response = await orderController.deleteOrder(req);
+        break;
+      case "ADD-EXISTING-BG":
+        response = await orderController.createOrderForExistingBilling(req);
+        break;
+      case "ADD-EXISTING-ACCT":
+        response = await orderController.createOrderForExistingAccount(req);
+        break;
+      default:
+        response = await orderController.createOrder(req);
+    }
+
     res.json(response);
   } catch (error) {
     console.log(error);
@@ -580,377 +352,6 @@ router.get("/orderRetrieveOrder", async (req, res) => {
     console.log(error);
   }
 });
-
-/** ################ AMPS Methods ########################## */
-/**
- * @name   sendRequest
- * @param  {object} {params}
- * @return {object | undefined}
- * @summary make request and attach security header
- *
- */
-
-exports.sendRequest = (additionalParams, endPoint) => {
-  return new Promise((resolve, reject) => {
-    const authToken = "gIW6EsgWyQmkkIVLZaKG";
-    const ampsUserId = "75";
-    const gmtTime = moment().utc().format("YYYY-MM-DDTHH:mm:ss") + "Z";
-    const signatureValue = this.generateToken(authToken, ampsUserId, gmtTime, "", 0, "", 1);
-
-    let params = {
-      msgAuthDetails: {
-        clientNo: ampsUserId,
-        requestDateTime: gmtTime,
-        signatureValue: signatureValue,
-        ariaAccountID: "",
-        ariaAccountNo: 0,
-        UserID: "",
-        signatureVersion: 1,
-      },
-    };
-    if (additionalParams) {
-      params = { ...params, ...additionalParams };
-    }
-
-    var clientServerOptions = {
-      uri: endPoint,
-      json: true,
-      body: params,
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    };
-    request(clientServerOptions, function (error, response) {
-      if (response) {
-        //  return resolve(JSON.stringify(common.responseMaker(response.statusCode, response.body)));
-        return resolve(response);
-      } else {
-        return reject(error);
-      }
-    });
-  });
-};
-/**
- * @name   generateToken
- * @param  {object} {authKey}
- * @param  {object} {clientNo}
- * @param  {object} {ariaAccountID}
- * @param  {object} {ariaAccountNo}
- * @param  {object} {UserID}
- * @return {string} amps authentication token
- * @summary by using differtnt security algorithm generate
- * authentication token
- *
- */
-
-exports.generateToken = (authKey, clientNo, requestDateTime, ariaAccountID, ariaAccountNo, UserID) => {
-  const concatString = clientNo + "|" + requestDateTime + "|" + ariaAccountID + "|" + ariaAccountNo + "|" + UserID + "|" + authKey;
-
-  return btoa(common.hex2a(CryptoJS.SHA256(common.utf16Converter(concatString)).toString()));
-};
-
-exports.createAccount = async (orderId) => {
-  const order = await OrderServices.getRequestParamsByOrderId(orderId);
-  return new Promise((resolve, reject) => {
-    const params = JSON.parse(order.orderDetails);
-    const acctUrl =
-      "https://eu-stage05.workflow.ariasystems.net/bpa/Stampen_Dev01/PostDataToFlow/Stampen/STMAccountManagement/STMAcctCreateAccountPwd";
-
-    this.sendRequest(params.accountInfo, acctUrl).then((response) => {
-      resolve(response.body);
-    });
-  });
-};
-exports.addPaymethod = async (accountNo, recurringId) => {
-  return new Promise((resolve, reject) => {
-    const params = {
-      acctManagePayMethodDetails: {
-        acctManagePayMethodActionInfo: {
-          acctManagePayMethodAction: "ADD",
-        },
-        acctManagePayMethodADD: {
-          ariaAgreementID: recurringId,
-          ariaAccountID: "",
-          ariaAccountNo: accountNo,
-        },
-      },
-    };
-
-    const acctUrl =
-      "https://eu-stage05.workflow.ariasystems.net/bpa/Stampen_Dev01/PostDataToFlow/ARIAMediaSuite/AccountManagement/AcctManagePayMethod";
-
-    this.sendRequest(params, acctUrl).then((response) => {
-      resolve(response.body);
-    });
-  });
-};
-exports.addBillingGroup = async (paymentMethodId, orderId) => {
-  const order = await OrderServices.getRequestParamsByOrderId(orderId);
-  return new Promise((resolve, reject) => {
-    const orderDetails = JSON.parse(order.orderDetails);
-    const params = {
-      acctManageBillingGroupDetails: [
-        {
-          actionDirective: "ADD",
-          ariaAccountNo: order.ariaAccountNo,
-          acctManageBillingGroupDetailsADD: {
-            titleCode: orderDetails.subsInfo.titleCode,
-            billingGroupStatus: "ACTIVE",
-            notifyMethod: "XML",
-            paymentOption: "METHODS",
-            payOptionInfo: {
-              payOptionID: "CREDITCARD",
-              payOptionVariant: "STANDARD",
-              paymentEANNum: "",
-              paymentEANRequisitionNum: "",
-            },
-            paymentMethodInfo: {
-              primaryPaymentMethodID: paymentMethodId, //the value get back from payment API
-              backupPaymentMethodID: "",
-            },
-            statementContactDetails: {
-              firstName: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.firstName,
-              middleInitials: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.middleInitials,
-              lastName: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.lastName,
-              emailAddress: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.emailAddress,
-              fullName:
-                orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.company ||
-                orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.firstName +
-                  " " +
-                  orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.lastName,
-              homePhone: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.homePhone,
-              cellPhone: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.cellPhone,
-              workPhone: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.workPhone,
-              birthDate: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.birthDate,
-              addressLine1: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addressLine1,
-              addressLine2: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addressLine2,
-              addressLine3: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addressLine3,
-              countryCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.countryCode,
-              postalCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.postalCode,
-              postalCity: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.postalCity,
-              addrLocality: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addrLocality,
-              addrStateProv: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addrStateProv,
-              streetName: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.streetName,
-              streetNo: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.streetNo,
-            },
-          },
-        },
-      ],
-    };
-    const billingUrl =
-      "https://eu-stage05.workflow.ariasystems.net/bpa/Stampen_Dev01/PostDataToFlow/ARIAMediaSuite/AccountManagement/AcctManageBillingGroup";
-
-    this.sendRequest(params, billingUrl).then((response) => {
-      resolve(response.body);
-    });
-  });
-};
-exports.addDeliveryAddress = async (orderId) => {
-  const order = await OrderServices.getRequestParamsByOrderId(orderId);
-  let params = {};
-  return new Promise((resolve, reject) => {
-    const orderDetails = JSON.parse(order.orderDetails);
-    params = {
-      distManageAddrAccountInfo: {
-        ariaAccountNo: order.ariaAccountNo,
-      },
-      distManageAddrList: [
-        {
-          distManageAddrActionInfo: { distManageAddrAction: "ADD" },
-          distManageAddrInfo: {
-            distAddrType: 1,
-            distAddrNo: null,
-            distAddrName:
-              orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.firstName +
-              " " +
-              orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.lastName,
-            //   distAddrLine1: tempDeliverydata.acctCreateAccountRequestDetails.accountContact.distAddrLine1,
-            //   distAddrLine2: tempDeliverydata.acctCreateAccountRequestDetails.accountContact.distAddrLine2,
-            //   distAddrLine3: tempDeliverydata.acctCreateAccountRequestDetails.accountContact.distAddrLine3,
-            distAddrCountryCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.countryCode,
-            distAddrPostalCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.postalCode,
-            distAddrCity: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.postalCity,
-            // distAddInfo1: tempDeliverydata.acctCreateAccountRequestDetails.accountContact.distAddInfo1,
-            // distAddInfo2: tempDeliverydata.acctCreateAccountRequestDetails.accountContact.distAddInfo2,
-            // distAddInfo3: tempDeliverydata.acctCreateAccountRequestDetails.accountContact.distAddInfo3,
-            distAddrLocality: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addrLocality,
-            distAddrStateProv: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addrStateProv,
-            distStreetName: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.streetName,
-            distStreetNo: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.streetNo,
-            distFlatNo: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.flatNo,
-            distFlatSpec: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.flatSpec,
-            distFlatFloor: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.flatFloor,
-            distEntranceNo: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.entranceNo,
-            // distPublAddrNo: orderDetails.acctCreateAccountRequestDetails.accountContact.accountInfo.streetNo,
-            // distCoAddr: orderDetails.acctCreateAccountRequestDetails.accountContact.accountInfo.streetNo,
-          },
-        },
-      ],
-    };
-    const addrUrl =
-      "https://eu-stage05.workflow.ariasystems.net/bpa/Stampen_Dev01/PostDataToFlow/ARIAPublishingSuite/DistributionManagement/DistManageAddr";
-
-    this.sendRequest(params, addrUrl).then((response) => {
-      resolve(response.body);
-    });
-  });
-};
-exports.addSubscription = async (orderId, billingInfo, isDefault = false) => {
-  const order = await OrderServices.getRequestParamsByOrderId(orderId);
-  let params = {};
-  return new Promise((resolve, reject) => {
-    const orderDetails = JSON.parse(order.orderDetails);
-    if (isDefault) {
-      params = {
-        subsManageSubscriptionAccountDetails: {
-          ariaAccountID: "",
-          ariaAccountNo: order.ariaAccountNo,
-          ownerTitleCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.ownerTitleCode,
-          ownerTitleDomain: "",
-        },
-        subsManageSubscriptionDetails: [
-          {
-            actionDirective: "ADD",
-            subsManageSubscriptionDetailsADD: {
-              ariaPlanNo: defaultSubscription.offeringPlanDetail.ariaPlanNo,
-              ariaPlanID: defaultSubscription.offeringPlanDetail.ariaPlanID,
-              productType: defaultSubscription.offeringDetail.productType,
-              productTypeVariant: defaultSubscription.offeringDetail.productTypeVariant,
-              titleCode: defaultSubscription.offeringDetail.titleCode,
-              titleDomain: defaultSubscription.offeringDetail.titleDomain,
-              ariaPlanRateScheduleID: defaultSubscription.offeringPlanDetail.offeringPlanRates[0].ariaScheduleID,
-              ariaBillingGroupID: billingInfo.ariaBillingGroupID,
-              ariaDunningGroupID: billingInfo.ariaDunningGroupID,
-              currencyCode: "sek",
-              billingFreqRecurring: defaultSubscription.offeringPlanDetail.offeringPlanRates[0].billingFreqRecurring,
-              billingFreqUsage: defaultSubscription.offeringPlanDetail.offeringPlanRates[0].billingFreqUsage,
-              channelCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.channelCode,
-              sourceCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.sourceCode,
-              initialStatusCode: "61",
-            },
-          },
-        ],
-      };
-
-      this.sendSubscription(params).then((response) => {
-        resolve(response.body);
-      });
-    } else {
-      if (orderDetails.subsInfo.productType !== "DIGITAL") {
-        this.addDeliveryAddress(orderId).then((addressData) => {
-          params = {
-            subsManageSubscriptionAccountDetails: {
-              ariaAccountID: "",
-              ariaAccountNo: order.ariaAccountNo,
-              ownerTitleCode: orderDetails.subsInfo.titleCode,
-              ownerTitleDomain: "",
-            },
-            subsManageSubscriptionDetails: [
-              {
-                actionDirective: "ADD",
-                subsManageSubscriptionDetailsADD: {
-                  ariaPlanNo: orderDetails.subsInfo.ariaPlanNo,
-                  ariaPlanID: orderDetails.subsInfo.ariaPlanID,
-                  productType: orderDetails.subsInfo.productType,
-                  productTypeVariant: "STANDARD",
-                  titleCode: orderDetails.subsInfo.titleCode,
-                  titleDomain: orderDetails.subsInfo.titleDomain,
-                  ariaPlanRateScheduleID: orderDetails.subsInfo.ariaPlanRateScheduleID,
-                  numberOfUnits: orderDetails.subsInfo.numberOfUnits,
-                  ariaBillingGroupID: billingInfo.ariaBillingGroupID,
-                  ariaDunningGroupID: billingInfo.ariaDunningGroupID,
-                  currencyCode: "sek",
-                  billingFreqRecurring: orderDetails.subsInfo.billingFreqRecurring,
-                  billingFreqUsage: orderDetails.subsInfo.billingFreqUsage,
-                  selectedDeliveryDays: "", //not in free one
-                  selectedDeliveryCharges: "",
-                  channelCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.channelCode,
-                  sourceCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.sourceCode,
-                  activationDate: null,
-                  subsManageSubscriptionAddInfo: {
-                    subscriptionInfo1: "",
-                    subscriptionInfo2: "",
-                    subscriptionInfo3: "",
-                  },
-                  subsManageSubscriptionAddrInfo: {
-                    distEffectiveStartDate: orderDetails.subsInfo.deliverAddrChangeInfo.distEffectiveStartDate,
-                    distEffectiveEndDate: null,
-                    distAddrDeliveryList: [
-                      {
-                        distAddrNo: addressData.distManageAddrListResponse[0].distManageAddrInfo.distAddrNo,
-                        distDeliveryDays: orderDetails.subsInfo.deliverAddrChangeInfo.distDeliveryDays,
-                      },
-                    ],
-                  },
-                  subsManageSubscriptionCampaignDetail: orderDetails.subsInfo.subsManageSubscriptionCampaignDetail,
-                  subsManageSubscriptionDiscountDetail: orderDetails.subsInfo.subsManageSubscriptionDiscountDetail,
-                },
-              },
-            ],
-          };
-          this.sendSubscription(params).then((response) => {
-            resolve(response.body);
-          });
-        });
-      } else {
-        params = {
-          subsManageSubscriptionAccountDetails: {
-            ariaAccountID: "",
-            ariaAccountNo: order.ariaAccountNo,
-            ownerTitleCode: orderDetails.subsInfo.titleCode,
-            ownerTitleDomain: "",
-          },
-          subsManageSubscriptionDetails: [
-            {
-              actionDirective: "ADD",
-              subsManageSubscriptionDetailsADD: {
-                ariaPlanNo: orderDetails.subsInfo.ariaPlanNo,
-                ariaPlanID: orderDetails.subsInfo.ariaPlanID,
-                productType: orderDetails.subsInfo.productType,
-                productTypeVariant: "STANDARD",
-                titleCode: orderDetails.subsInfo.titleCode,
-                titleDomain: orderDetails.subsInfo.titleDomain,
-                ariaPlanRateScheduleID: orderDetails.subsInfo.ariaPlanRateScheduleID,
-                numberOfUnits: orderDetails.subsInfo.numberOfUnits,
-                ariaBillingGroupID: billingInfo.ariaBillingGroupID,
-                ariaDunningGroupID: billingInfo.ariaDunningGroupID,
-                currencyCode: "sek",
-                billingFreqRecurring: orderDetails.subsInfo.billingFreqRecurring,
-                billingFreqUsage: orderDetails.subsInfo.billingFreqUsage,
-                selectedDeliveryDays: "", //not in free one
-                selectedDeliveryCharges: "",
-                channelCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.channelCode,
-                sourceCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.sourceCode,
-                activationDate: null,
-                subsManageSubscriptionAddInfo: {
-                  subscriptionInfo1: "",
-                  subscriptionInfo2: "",
-                  subscriptionInfo3: "",
-                },
-                subsManageSubscriptionCampaignDetail: orderDetails.subsInfo.subsManageSubscriptionCampaignDetail,
-                subsManageSubscriptionDiscountDetail: orderDetails.subsInfo.subsManageSubscriptionDiscountDetail,
-              },
-            },
-          ],
-        };
-        this.sendSubscription(params).then((response) => {
-          resolve(response.body);
-        });
-      }
-    }
-  });
-};
-exports.sendSubscription = async (params) => {
-  return new Promise((resolve, reject) => {
-    const subsUrl =
-      "https://eu-stage05.workflow.ariasystems.net/bpa/Stampen_Dev01/PostDataToFlow/ARIAMediaSuite/SubscriptionManagement/SubsManageSubscriptions";
-
-    this.sendRequest(params, subsUrl).then((response) => {
-      resolve(response);
-    });
-  });
-};
 
 /* ################# CLIENT ENDPOINTS ###################### */
 /* ################# UTILS ###################### */

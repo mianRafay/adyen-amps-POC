@@ -1,12 +1,19 @@
 const OrderModel = require("../models").order;
 
 exports.updateOrderStatus = async (orderId, params) => {
-  const dbParams = params;
-  const order = await OrderModel.update(dbParams, {
-    where: {
-      id: orderId,
-    },
-  });
+  try {
+    const dbParams = params;
+    const order = await OrderModel.update(dbParams, {
+      where: {
+        id: orderId,
+      },
+      returning: true,
+      plain: true,
+    });
+    return order;
+  } catch (err) {
+    console.err(err);
+  }
 };
 
 exports.getRequestParamsByOrderId = async (orderId) => {
@@ -20,7 +27,10 @@ exports.getRequestParamsByOrderId = async (orderId) => {
 };
 
 exports.createOrder = async (dbParams) => {
-  const order = await OrderModel.create(dbParams);
-
-  return order;
+  try {
+    const order = await OrderModel.create(dbParams);
+    return order;
+  } catch (err) {
+    console.err(err);
+  }
 };

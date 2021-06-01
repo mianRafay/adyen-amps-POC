@@ -31,6 +31,11 @@ module.exports = (sequelize, DataTypes) => {
     orderStatus: DataTypes.STRING,
     orderFailureModule: DataTypes.STRING,
     orderFailureReason: DataTypes.STRING,
+    isDeleted: {
+      type: DataTypes.ENUM("Y", "N"),
+      allowNull: false,
+      defaultValue: () => "N",
+    },
     createdAt: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
