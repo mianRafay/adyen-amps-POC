@@ -104,30 +104,34 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
       });
 
       const orderData = await OrderServices.getRequestParamsByOrderId(orderId);
-      const actionDirective = await JSON.parse(orderData.orderDetails).actionDirective;
-      switch (actionDirective) {
+      const actionDirective = await JSON.parse(orderData.orderDetails);
+      switch (actionDirective.actionDirective) {
         case "ADD":
           {
-            const accountCreateData = await orderController.createAccount(orderId, orderData);
-            const updatedOrderData = await OrderServices.getRequestParamsByOrderId(orderId);
-            const defaultSub = await orderController.addSubscription(
-              orderId,
-              updatedOrderData,
-              accountCreateData.acctCreateAccountResponseDetails.acctCreateAccountBillingGroupDetails[0],
-              true
-            );
-            const paymentMethodData = await orderController.addPaymethod(updatedOrderData, orderId);
-            const billingGroupData = await orderController.addBillingGroup(
-              orderId,
-              paymentMethodData.acctManagePayMethodResponseDetails.ariaPayMethodID,
-              updatedOrderData
-            );
-            const subscriptionData = await orderController.addSubscription(
-              orderId,
-              updatedOrderData,
-              billingGroupData.acctManageBillingGroupResponseDetails[0].billingGroupResponseINFO,
-              false
-            );
+            try {
+              const accountCreateData = await orderController.createAccount(orderId, orderData);
+              const updatedOrderData = await OrderServices.getRequestParamsByOrderId(orderId);
+              const defaultSub = await orderController.addSubscription(
+                orderId,
+                updatedOrderData,
+                accountCreateData.acctCreateAccountResponseDetails.acctCreateAccountBillingGroupDetails[0],
+                true
+              );
+              const paymentMethodData = await orderController.addPaymethod(updatedOrderData, orderId);
+              const billingGroupData = await orderController.addBillingGroup(
+                orderId,
+                paymentMethodData.acctManagePayMethodResponseDetails.ariaPayMethodID,
+                updatedOrderData
+              );
+              const subscriptionData = await orderController.addSubscription(
+                orderId,
+                updatedOrderData,
+                billingGroupData.acctManageBillingGroupResponseDetails[0].billingGroupResponseINFO,
+                false
+              );
+            } catch (ex) {
+              console.error("outer", ex.message);
+            }
           }
           break;
         case "ADD-EXISTING-ACCT":
@@ -153,12 +157,16 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
       OrderServices.updateOrderStatus(orderId, {
         orderFailureModule: "ADEYN FLOW FAILED",
         orderFailureReason: JSON.stringify(response),
+        resultText: response.message,
+        resultCode: response.errorCode,
       });
     }
   } catch (err) {
-    OrderServices.updateOrderStatus(orderId, {
+    await OrderServices.updateOrderStatus(orderId, {
       orderFailureModule: "ADEYN FLOW FAILED",
       orderFailureReason: JSON.stringify(err),
+      resultText: err.message,
+      resultCode: err.errorCode,
     });
     console.error(`Error: ${err.message}, error code: ${err.errorCode}`);
 
@@ -340,17 +348,19 @@ router.get("/orderRetrieveOrder", async (req, res) => {
     const orderDetails = await OrderServices.getRequestParamsByOrderId(orderId);
     const response = {
       resultInfo: {
-        error: "false",
-        statusCode: 200,
-        orderId: orderDetails.id,
-        orderStatus: orderDetails.orderStatus,
-        ariaMPINo: orderDetails.ariaMPINo,
-        ariaMPIID: orderDetails.ariaMPIID,
-        ariaAccountID: orderDetails.ariaAccountID,
-        ariaAccountNo: orderDetails.ariaAccountNo,
-        ariaBillingGroupID: orderDetails.ariaBillingGroupID,
-        orderDetails: orderDetails.orderFailureReason ? JSON.parse(orderDetails.orderDetails) : "",
-        orderStatusReason: orderDetails.orderFailureModule,
+        resultCode: orderDetails.resultCode,
+        resultText: orderDetails.resultText,
+        orderDetails: {
+          orderId: orderDetails.id,
+          orderStatus: orderDetails.orderStatus,
+          ariaMPINo: orderDetails.ariaMPINo,
+          ariaMPIID: orderDetails.ariaMPIID,
+          ariaAccountID: orderDetails.ariaAccountID,
+          ariaAccountNo: orderDetails.ariaAccountNo,
+          ariaBillingGroupID: orderDetails.ariaBillingGroupID,
+          orderDetails: orderDetails.orderFailureReason ? JSON.parse(orderDetails.orderDetails) : "",
+          orderStatusReason: orderDetails.orderFailureModule,
+        },
       },
     };
     res.json(response);

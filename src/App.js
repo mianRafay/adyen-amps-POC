@@ -1,7 +1,7 @@
 import React from "react";
-import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
+import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import { Payment } from "./features/payment/Payment";
-import { Preview } from "./features/preview/Preview";
+// import { Preview } from "./features/preview/Preview";
 import { Status } from "./features/status/Status";
 import { Cancel } from "./features/cancel/Cancel";
 import "./App.css";
@@ -10,9 +10,9 @@ function App() {
   return (
     <Router>
       <Switch>
-        <Route path="/preview/:type">
+        {/* <Route path="/preview/:type">
           <Preview />
-        </Route>
+        </Route> */}
         <Route path="/checkout/:type/:orderId">
           <Payment />
         </Route>
@@ -22,7 +22,7 @@ function App() {
         <Route path="/cancel">
           <Cancel />
         </Route>
-        <Route path="/">
+        {/* <Route path="/">
           <div className="main-container">
             <div className="info">
               <h1>Select a demo</h1>
@@ -108,7 +108,7 @@ function App() {
               </Link>
             </div>
           </div>
-        </Route>
+        </Route> */}
       </Switch>
     </Router>
   );

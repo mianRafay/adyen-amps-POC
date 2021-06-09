@@ -203,8 +203,11 @@ exports.createAccount = async (orderId, orderData) => {
       await OrderServices.updateOrderStatus(orderId, {
         orderStatus: ORDER_STATUS.FAILURE.ACCOUNT,
         orderFailureReason: JSON.stringify(accountCreateData),
+        orderFailureModule: "CREATE ACCOUNT FLOW FAILED",
+        resultText: `AMPS issue - ${accountCreateData.resultInfo.resultCode}`,
+        resultCode: accountCreateData.resultInfo.resultCode,
       });
-      //throw new Error('Error Occured');
+      throw new Error("Error Occured");
     } else {
       await OrderServices.updateOrderStatus(orderId, {
         orderStatus: ORDER_STATUS.SUCCESS.ACCOUNT,
@@ -240,6 +243,9 @@ exports.addPaymethod = async (orderData, orderId) => {
     await OrderServices.updateOrderStatus(orderId, {
       orderStatus: ORDER_STATUS.FAILURE.PAYMENT_METHOD,
       orderFailureReason: JSON.stringify(paymentMethodData),
+      orderFailureModule: "PAYMENT METHOD FLOW FAILED",
+      resultText: `AMPS issue - ${paymentMethodData.resultInfo.resultCode}`,
+      resultCode: paymentMethodData.resultInfo.resultCode,
     });
     res.json([response, orderRef]);
   }
@@ -307,6 +313,10 @@ exports.addBillingGroup = async (orderId, paymentMethodId, orderData) => {
   if (billingGroupData.resultInfo.resultCode !== 0) {
     await OrderServices.updateOrderStatus(orderId, {
       orderStatus: ORDER_STATUS.FAILURE.BILLING_GROUP,
+      orderFailureReason: JSON.stringify(billingGroupData),
+      orderFailureModule: "BILLING GROUP FLOW FAILED",
+      resultText: `AMPS issue - ${billingGroupData.resultInfo.resultCode}`,
+      resultCode: billingGroupData.resultInfo.resultCode,
     });
   }
   OrderServices.updateOrderStatus(orderId, {
@@ -405,6 +415,9 @@ exports.addSubscription = async (orderId, orderData, billingInfo, isDefault = fa
       await OrderServices.updateOrderStatus(orderId, {
         orderStatus: ORDER_STATUS.FAILURE.DEFAULT_SUBSCRIPTION,
         orderFailureReason: JSON.stringify(defaultSub),
+        orderFailureModule: "DEFAULT FLOW FAILED",
+        resultText: `AMPS issue - ${defaultSub.resultInfo.resultCode}`,
+        resultCode: defaultSub.resultInfo.resultCode,
       });
     }
     return defaultSub;
@@ -466,7 +479,10 @@ exports.addSubscription = async (orderId, orderData, billingInfo, isDefault = fa
       if (subscriptionData.resultInfo.resultCode !== 0) {
         await OrderServices.updateOrderStatus(orderId, {
           orderStatus: ORDER_STATUS.FAILURE.SUBSCRIPTION,
-          orderFailureReason: JSON.stringify(defaultSub),
+          orderFailureReason: JSON.stringify(subscriptionData),
+          orderFailureModule: "SUBSCRIPTION FLOW FAILED",
+          resultText: `AMPS issue - ${subscriptionData.resultInfo.resultCode}`,
+          resultCode: subscriptionData.resultInfo.resultCode,
         });
       }
       OrderServices.updateOrderStatus(orderId, {
@@ -520,7 +536,10 @@ exports.addSubscription = async (orderId, orderData, billingInfo, isDefault = fa
       if (subscriptionData.resultInfo.resultCode !== 0) {
         await OrderServices.updateOrderStatus(orderId, {
           orderStatus: ORDER_STATUS.FAILURE.SUBSCRIPTION,
-          orderFailureReason: JSON.stringify(defaultSub),
+          orderFailureReason: JSON.stringify(subscriptionData),
+          orderFailureModule: "SUBSCRIPTION FLOW FAILED",
+          resultText: `AMPS issue - ${subscriptionData.resultInfo.resultCode}`,
+          resultCode: subscriptionData.resultInfo.resultCode,
         });
       }
       OrderServices.updateOrderStatus(orderId, {

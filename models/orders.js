@@ -31,6 +31,8 @@ module.exports = (sequelize, DataTypes) => {
     orderStatus: DataTypes.STRING,
     orderFailureModule: DataTypes.STRING,
     orderFailureReason: DataTypes.STRING,
+    resultCode: DataTypes.STRING,
+    resultText: DataTypes.TEXT("long"),
     isDeleted: {
       type: DataTypes.ENUM("Y", "N"),
       allowNull: false,
