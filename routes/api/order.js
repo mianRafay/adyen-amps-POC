@@ -16,6 +16,7 @@ const checkout = new CheckoutAPI(client);
 const modification = new Modification(client);
 const validator = new hmacValidator();
 const middleware = require("../../utils/middleware");
+const common = require("../../utils/common");
 const { ORDER_STATUS } = require("../../utils/constants");
 const orderController = require("../../controllers/orders");
 
@@ -338,7 +339,7 @@ router.post("/orderManageOrder", middleware.apiValidator("orderManageOrder", "bo
  * @name orderRetrieveOrder
  * @description: Send Order Status Back
  */
-router.get("/orderRetrieveOrder", async (req, res) => {
+router.get("/orderRetrieveOrder", middleware.apiValidator("orderRetrieveOrder", "query"), async (req, res, next) => {
   try {
     const orderId = req.query.orderId;
     const orderDetails = await OrderServices.getRequestParamsByOrderId(orderId);
@@ -359,9 +360,11 @@ router.get("/orderRetrieveOrder", async (req, res) => {
         },
       },
     };
-    res.json(response);
+    return res.json(response);
   } catch (error) {
-    console.log(error);
+    const errorValue = common.errorResponseMaker(error);
+    return res.status(errorValue.resultInfo.resultCode).send(errorValue);
+    //  return res.json(error);
   }
 });
 

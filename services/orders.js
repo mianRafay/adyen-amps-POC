@@ -11,26 +11,31 @@ exports.updateOrderStatus = async (orderId, params) => {
       plain: true,
     });
     return order;
-  } catch (err) {
-    console.err(err);
-  }
+  } catch (err) {}
 };
 
 exports.getRequestParamsByOrderId = async (orderId) => {
   //get order by id
-  const orderInfo = await OrderModel.findOne({
-    where: { id: orderId },
-  });
-  //get json parse string
-
-  return orderInfo;
+  try {
+    const orderInfo = await OrderModel.findOne({
+      where: { id: orderId },
+    });
+    //get json parse string
+    if (orderInfo) {
+      return orderInfo;
+    } else {
+      throw {
+        name: "NoRecordFound",
+      };
+    }
+  } catch (err) {
+    throw err;
+  }
 };
 
 exports.createOrder = async (dbParams) => {
   try {
     const order = await OrderModel.create(dbParams);
     return order;
-  } catch (err) {
-    console.err(err);
-  }
+  } catch (err) {}
 };
