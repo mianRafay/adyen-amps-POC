@@ -23,9 +23,11 @@ const middleware = {
         .then((response) => {
           if (!response || response?.length === 0) {
             return res.status(401).json({
-              statusCode: 401,
-              error: true,
-              message: "Unauthorized access. Invalid key value",
+              resultInfo: {
+                resultCode: 401,
+                error: true,
+                resultText: "Unauthorized access. Invalid key value",
+              },
             });
           } else {
             next();
@@ -34,18 +36,19 @@ const middleware = {
         .catch((err) => {
           console.error(err);
           return res.status(401).json({
-            statusCode: 401,
-            error: true,
-            message: "Unauthorized access. Invalid key value",
+            resultInfo: {
+              resultCode: 401,
+              error: true,
+              resultText: "Unauthorized access. Invalid key value",
+            },
           });
         });
 
       if (schema) {
-        const { error } =
-          type === "body" ? validator.orderManageOrder.validate(req[type]) : validator.validate(req[type], validator[schema]);
+        const { error } = type === "body" ? validator[schema].validate(req[type]) : validator[schema].validate(req[type]);
         const valid = error == null;
         if (valid) {
-          //        next();
+        //  next();
         } else {
           const { details } = error;
           const message = details
@@ -55,7 +58,8 @@ const middleware = {
           // .replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi, " ");
 
           const errorValue = common.errorResponseMaker(error, details[0].path[details[0].path.length - 1] + message);
-          return res.status(errorValue.resultInfo.resultCode).json(errorValue);
+          res.status(errorValue.resultInfo.resultCode).json(errorValue);
+         // next();
         }
       }
     };
