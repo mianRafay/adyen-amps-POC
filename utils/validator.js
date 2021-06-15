@@ -18,7 +18,7 @@ const validator = {
           orderStatus: Joi.any(),
           orderStatusReason: Joi.any(),
         }),
-      }).required(),
+      }),
       accountInfo: Joi.when("actionDirective", {
         is: Joi.exist().valid("ADD", "ADD-EXISTING-BG", "ADD-EXISTING-ACCT"),
         then: Joi.object({
@@ -104,6 +104,12 @@ const validator = {
           .options({ allowUnknown: true }),
       }),
     }),
+  }),
+  /************************************************** Retrieve Order **************************************************/
+  orderRetrieveOrder: Joi.object({
+    // query: {
+    orderId: Joi.any().required(),
+    // },
   }),
 };
 
