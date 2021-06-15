@@ -1,8 +1,10 @@
 const AuthService = require("../services/auth");
+const validator = require("./validator");
+const common = require("./common");
 const Crypto = require("crypto-js");
 
 const middleware = {
-  apiValidator: () => {
+  apiValidator: (schema = false, type = false) => {
     return (req, res, next) => {
       const token = req.body["x-access-token"] || req.query["x-access-token"] || req.headers["x-access-token"];
       //if token is not there just send back token is missing
@@ -37,6 +39,25 @@ const middleware = {
             message: "Unauthorized access. Invalid key value",
           });
         });
+
+      if (schema) {
+        const { error } =
+          type === "body" ? validator.orderManageOrder.validate(req[type]) : validator.validate(req[type], validator[schema]);
+        const valid = error == null;
+        if (valid) {
+          //        next();
+        } else {
+          const { details } = error;
+          const message = details
+            .map((i) => i.message)
+            .join(",")
+            .replace(/".*?"/, "");
+          // .replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi, " ");
+
+          const errorValue = common.errorResponseMaker(error, details[0].path[details[0].path.length - 1] + message);
+          return res.status(errorValue.resultInfo.resultCode).json(errorValue);
+        }
+      }
     };
   },
 };

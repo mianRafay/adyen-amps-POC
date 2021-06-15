@@ -207,7 +207,7 @@ exports.createAccount = async (orderId, orderData) => {
         resultText: `AMPS issue - ${accountCreateData.resultInfo.resultCode}`,
         resultCode: accountCreateData.resultInfo.resultCode,
       });
-      throw new Error("Error Occured");
+      throw new Error(common.errorObject(accountCreateData.resultInfo.resultCode, accountCreateData.resultInfo.resultText));
     } else {
       await OrderServices.updateOrderStatus(orderId, {
         orderStatus: ORDER_STATUS.SUCCESS.ACCOUNT,
@@ -217,7 +217,7 @@ exports.createAccount = async (orderId, orderData) => {
     }
     return accountCreateData;
   } catch (e) {
-    return e;
+    throw new Error(e);
   }
 };
 

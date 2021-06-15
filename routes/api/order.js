@@ -108,30 +108,26 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
       switch (actionDirective.actionDirective) {
         case "ADD":
           {
-            try {
-              const accountCreateData = await orderController.createAccount(orderId, orderData);
-              const updatedOrderData = await OrderServices.getRequestParamsByOrderId(orderId);
-              const defaultSub = await orderController.addSubscription(
-                orderId,
-                updatedOrderData,
-                accountCreateData.acctCreateAccountResponseDetails.acctCreateAccountBillingGroupDetails[0],
-                true
-              );
-              const paymentMethodData = await orderController.addPaymethod(updatedOrderData, orderId);
-              const billingGroupData = await orderController.addBillingGroup(
-                orderId,
-                paymentMethodData.acctManagePayMethodResponseDetails.ariaPayMethodID,
-                updatedOrderData
-              );
-              const subscriptionData = await orderController.addSubscription(
-                orderId,
-                updatedOrderData,
-                billingGroupData.acctManageBillingGroupResponseDetails[0].billingGroupResponseINFO,
-                false
-              );
-            } catch (ex) {
-              console.error("outer", ex.message);
-            }
+            const accountCreateData = await orderController.createAccount(orderId, orderData);
+            const updatedOrderData = await OrderServices.getRequestParamsByOrderId(orderId);
+            const defaultSub = await orderController.addSubscription(
+              orderId,
+              updatedOrderData,
+              accountCreateData.acctCreateAccountResponseDetails.acctCreateAccountBillingGroupDetails[0],
+              true
+            );
+            const paymentMethodData = await orderController.addPaymethod(updatedOrderData, orderId);
+            const billingGroupData = await orderController.addBillingGroup(
+              orderId,
+              paymentMethodData.acctManagePayMethodResponseDetails.ariaPayMethodID,
+              updatedOrderData
+            );
+            const subscriptionData = await orderController.addSubscription(
+              orderId,
+              updatedOrderData,
+              billingGroupData.acctManageBillingGroupResponseDetails[0].billingGroupResponseINFO,
+              false
+            );
           }
           break;
         case "ADD-EXISTING-ACCT":
@@ -311,7 +307,7 @@ router.post("/webhook/notification", async (req, res) => {
  * @name orderManageOrder
  * @description Get order Details and return Order id back
  */
-router.post("/orderManageOrder", middleware.apiValidator(), async (req, res) => {
+router.post("/orderManageOrder", middleware.apiValidator("orderManageOrder", "body"), async (req, res) => {
   //send back an order ID
   let response;
   try {

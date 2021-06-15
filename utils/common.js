@@ -87,21 +87,34 @@ const common = {
     return btoa(common.hex2a(CryptoJS.SHA256(common.utf16Converter(concatString)).toString()));
   },
 
-  getNotNullObject: (params)=>{
-    const filledProps = params.map(el => {
-        // Loop the property names of `el`, creating a new object
-        // with the ones whose values aren't `null`.
-        // `reduce` is commonly used for doing this:
-        return Object.keys(el).reduce((newObj, key) => {
-          const value = el[key];
-          if (value !== null) {
-            newObj[key] = value;
-          }
-          return newObj;
-        }, {});
-      });
+  getNotNullObject: (params) => {
+    const filledProps = params.map((el) => {
+      // Loop the property names of `el`, creating a new object
+      // with the ones whose values aren't `null`.
+      // `reduce` is commonly used for doing this:
+      return Object.keys(el).reduce((newObj, key) => {
+        const value = el[key];
+        if (value !== null) {
+          newObj[key] = value;
+        }
+        return newObj;
+      }, {});
+    });
 
-      return filledProps;
+    return filledProps;
+  },
+  /**
+   * @name   errorObject
+   * @param  {object} {params}
+   * @return {object}
+   * @summary always return error object
+   *
+   */
+  errorObject: (errCode = 500, errMsg = "Internal Server Error") => {
+    return {
+      message: errMsg,
+      errorCode: errCode,
+    };
   },
   /** ################ AMPS Methods ########################## */
   /**
@@ -148,6 +161,56 @@ const common = {
     } catch (err) {
       console.error(err);
     }
+  },
+
+  /**
+   * @name  errorResponseMaker
+   * @param  {string} {code}
+   * @param  {any} {body}
+   * @return {object}
+   * @summary Get current date and time
+   *
+   */
+  errorResponseMaker: (error, errorMsg) => {
+    const errorBody = error.name;
+    let errorMessage = "";
+    let code = 500;
+    switch (errorBody) {
+      case "SequelizeValidationError":
+        errorMessage = "Invalid Request Format";
+        code = 400;
+        break;
+      case "RecordExistError":
+        for (const property in error.fields) {
+          errorMessage = error.fields[property];
+        }
+        code = 422;
+        break;
+      case "ValidationError":
+        errorMessage = errorMsg ? errorMsg : "Invalid Request Format";
+        code = 422;
+        break;
+      case "NoRecordFound":
+        errorMessage = errorMsg ? errorMsg : "No Record Exist";
+        code = 400;
+        break;
+      case "NoLinkFound":
+        errorMessage = errorMsg ? errorMsg : "Invalid Link Provided";
+        code = 400;
+        break;
+      case "BlockedAccess":
+        errorMessage = errorMsg ? errorMsg : "Following has blocked access";
+        code = 403;
+        break;
+      default:
+        errorMessage = "Internal Server Error";
+        code = 500;
+    }
+    // "resultInfo": {
+    //     "error": "false",
+    //     "resultCode": 200,
+    //     "resultText": "Order # undefined is created successfully",
+    return { resultInfo: { error: true, resultCode: code, resultText: errorMessage } };
   },
 };
 
