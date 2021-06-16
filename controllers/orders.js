@@ -603,7 +603,7 @@ exports.createOrder = async (req) => {
   const dbParams = {
     orderDetails: JSON.stringify(req.body.manageOrderDetails),
     orderStatus: "INITIATED",
-    resultText: "ORDER CREATED",
+    resultText: "OK",
     resultCode: "200",
   };
   const order = await OrderServices.createOrder(dbParams);
@@ -625,6 +625,8 @@ exports.createOrderForExistingAccount = async (req) => {
     orderStatus: "INITIATED",
     ariaAccountID: requestData.accountInfo.acctCreateAccountRequestDetails.ariaAccountID,
     ariaAccountNo: requestData.accountInfo.acctCreateAccountRequestDetails.ariaAccountNo,
+    resultText: "OK",
+    resultCode: "200",
   };
   const order = await OrderServices.createOrder(dbParams);
   const response = {
