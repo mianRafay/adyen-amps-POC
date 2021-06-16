@@ -78,7 +78,7 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
       browserInfo: req.body.browserInfo, // required for 3ds2
       shopperIP, // required by some issuers for 3ds2
       // we pass the orderRef in return URL to get paymentData during redirects
-      returnUrl: `${process.env.ORIGIN_URL}/api/handleShopperRedirect?orderRef=${orderRef}`, // required for 3ds2 redirect flow
+      returnUrl: `${process.env.ORIGIN_URL}/api/handleShopperRedirect?orderRef=${orderRef}&orderId=${orderId}`, // required for 3ds2 redirect flow
       paymentMethod: req.body.paymentMethod,
       billingAddress: req.body.billingAddress,
       shopperReference: req.params.orderId,
@@ -110,52 +110,10 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
       await OrderServices.updateOrderStatus(orderId, {
         orderStatus: ORDER_STATUS.SUCCESS.PAYMENT,
       });
-
-      const orderData = await OrderServices.getRequestParamsByOrderId(orderId);
-      const actionDirective = await JSON.parse(orderData.orderDetails);
-      switch (actionDirective.actionDirective) {
-        case "ADD":
-          {
-            const accountCreateData = await orderController.createAccount(orderId, orderData);
-            const updatedOrderData = await OrderServices.getRequestParamsByOrderId(orderId);
-            const defaultSub = await orderController.addSubscription(
-              orderId,
-              updatedOrderData,
-              accountCreateData.acctCreateAccountResponseDetails.acctCreateAccountBillingGroupDetails[0],
-              true
-            );
-            const paymentMethodData = await orderController.addPaymethod(updatedOrderData, orderId);
-            const billingGroupData = await orderController.addBillingGroup(
-              orderId,
-              paymentMethodData.acctManagePayMethodResponseDetails.ariaPayMethodID,
-              updatedOrderData
-            );
-            const subscriptionData = await orderController.addSubscription(
-              orderId,
-              updatedOrderData,
-              billingGroupData.acctManageBillingGroupResponseDetails[0].billingGroupResponseINFO,
-              false
-            );
-          }
-          break;
-        case "ADD-EXISTING-ACCT":
-          {
-            const updatedOrderData = await OrderServices.getRequestParamsByOrderId(orderId);
-            const paymentMethodData = await orderController.addPaymethod(updatedOrderData, orderId);
-            const billingGroupData = await orderController.addBillingGroup(
-              orderId,
-              paymentMethodData.acctManagePayMethodResponseDetails.ariaPayMethodID,
-              updatedOrderData
-            );
-            const subscriptionData = await orderController.addSubscription(
-              orderId,
-              updatedOrderData,
-              billingGroupData.acctManageBillingGroupResponseDetails[0].billingGroupResponseINFO,
-              false
-            );
-          }
-          break;
-      }
+      // Make a common method to call these AMPS flow
+      await orderController.createAccountWithOrderId(orderId);
+      res.send([response, orderRef]);
+    } else if (response.action) {
       res.send([response, orderRef]);
     } else {
       await OrderServices.updateOrderStatus(orderId, {
@@ -207,6 +165,7 @@ router.all("/handleShopperRedirect", async (req, res) => {
   // Create the payload for submitting payment details
   console.log("req", req);
   const orderRef = req.query.orderRef;
+  const orderId = req.query.orderId;
   const redirect = req.method === "GET" ? req.query : req.body;
   const details = {};
   if (redirect.payload) {
@@ -232,6 +191,7 @@ router.all("/handleShopperRedirect", async (req, res) => {
     // Conditionally handle different result codes for the shopper
     switch (response.resultCode) {
       case "Authorised":
+        await orderController.createAccountWithOrderId(orderId);
         res.redirect(`${originalHost}/status/success`);
         break;
       case "Pending":

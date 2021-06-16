@@ -702,3 +702,56 @@ exports.modifyOrder = async (req) => {
     return err;
   }
 };
+
+exports.createAccountWithOrderId = async (orderId) => {
+  try {
+    const orderData = await OrderServices.getRequestParamsByOrderId(orderId);
+    const actionDirective = await JSON.parse(orderData.orderDetails);
+    switch (actionDirective.actionDirective) {
+      case "ADD":
+        {
+          const accountCreateData = await this.createAccount(orderId, orderData);
+          const updatedOrderData = await OrderServices.getRequestParamsByOrderId(orderId);
+          const defaultSub = await this.addSubscription(
+            orderId,
+            updatedOrderData,
+            accountCreateData.acctCreateAccountResponseDetails.acctCreateAccountBillingGroupDetails[0],
+            true
+          );
+          const paymentMethodData = await this.addPaymethod(updatedOrderData, orderId);
+          const billingGroupData = await this.addBillingGroup(
+            orderId,
+            paymentMethodData.acctManagePayMethodResponseDetails.ariaPayMethodID,
+            updatedOrderData
+          );
+          const subscriptionData = await this.addSubscription(
+            orderId,
+            updatedOrderData,
+            billingGroupData.acctManageBillingGroupResponseDetails[0].billingGroupResponseINFO,
+            false
+          );
+        }
+        break;
+      case "ADD-EXISTING-ACCT":
+        {
+          const updatedOrderData = await OrderServices.getRequestParamsByOrderId(orderId);
+          const paymentMethodData = await this.addPaymethod(updatedOrderData, orderId);
+          const billingGroupData = await this.addBillingGroup(
+            orderId,
+            paymentMethodData.acctManagePayMethodResponseDetails.ariaPayMethodID,
+            updatedOrderData
+          );
+          const subscriptionData = await this.addSubscription(
+            orderId,
+            updatedOrderData,
+            billingGroupData.acctManageBillingGroupResponseDetails[0].billingGroupResponseINFO,
+            false
+          );
+        }
+        break;
+    }
+    return true;
+  } catch (e) {
+    throw e;
+  }
+};
