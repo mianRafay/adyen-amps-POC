@@ -603,6 +603,8 @@ exports.createOrder = async (req) => {
   const dbParams = {
     orderDetails: JSON.stringify(req.body.manageOrderDetails),
     orderStatus: "INITIATED",
+    resultText: "ORDER CREATED",
+    resultCode: "200",
   };
   const order = await OrderServices.createOrder(dbParams);
   const response = {
