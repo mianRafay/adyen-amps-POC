@@ -28,8 +28,10 @@ class CheckoutContainer extends React.Component {
   }
 
   componentDidMount() {
-    console.log(this.props.orderId, "orderId");
-    this.props.getPaymentMethods();
+    if (!this.props.orderId) {
+      window.location.href = `/status/error?reason}`;
+    }
+    this.props.getPaymentMethods(this.props.orderId);
   }
 
   componentDidUpdate(prevProps) {

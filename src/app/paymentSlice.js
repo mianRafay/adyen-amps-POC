@@ -71,8 +71,9 @@ export const slice = createSlice({
 
 export const { paymentMethods, payments, paymentDetails, paymentDataStore } = slice.actions;
 
-export const getPaymentMethods = () => async (dispatch) => {
-  const response = await fetch("/api/getPaymentMethods", {
+export const getPaymentMethods = (orderId) => async (dispatch) => {
+  debugger;
+  const response = await fetch("/api/getPaymentMethods/" + orderId, {
     method: "POST",
   });
   dispatch(paymentMethods([await response.json(), response.status]));

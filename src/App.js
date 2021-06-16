@@ -22,6 +22,9 @@ function App() {
         <Route path="/cancel">
           <Cancel />
         </Route>
+        <Route path="*">
+          <Status />
+        </Route>
         {/* <Route path="/">
           <div className="main-container">
             <div className="info">

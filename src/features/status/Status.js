@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useParams, useLocation } from "react-router-dom";
 
 export const Message = ({ type, reason }) => {
+  debugger;
   let msg, img;
   switch (type) {
     case "pending":
@@ -21,6 +22,10 @@ export const Message = ({ type, reason }) => {
       );
       img = "failed";
       break;
+    case "notfound":
+      msg = <span>Invalid Order Id or Order Id is missing&nbsp;</span>;
+      img = "failed";
+      break;
     default:
       msg = <span>Your order has been successfully placed.</span>;
       img = "success";
@@ -36,10 +41,10 @@ export const Message = ({ type, reason }) => {
 };
 
 export function Status() {
-  let { type } = useParams();
+  let { type = "notfound" } = useParams();
   let query = new URLSearchParams(useLocation().search);
   let reason = query ? query.get("reason") : "";
-
+  debugger;
   return (
     <div className="status-container">
       <div className="status">

@@ -30,16 +30,23 @@ const originStore = {};
 router.get("/getPaymentDataStore", async (req, res) => res.json(paymentStore));
 
 // Get payment methods
-router.post("/getPaymentMethods", async (req, res) => {
+router.post("/getPaymentMethods/:orderId?", async (req, res) => {
   try {
     const response = await checkout.paymentMethods({
       channel: "Web",
       merchantAccount: process.env.MERCHANT_ACCOUNT,
     });
+    const orderId = req.params.orderId;
+    await OrderServices.getRequestParamsByOrderId(orderId);
+
     res.json(response);
   } catch (err) {
-    console.error(`Error: ${err.message}, error code: ${err.errorCode}`);
-    res.status(err.statusCode).json(err.message);
+    if (err?.name == "NoRecordFound") {
+      res.status(404).json("Order Id is invalid.");
+    } else {
+      console.error(`Error: ${err.message}, error code: ${err.errorCode}`);
+      res.status(err.statusCode).json(err.message);
+    }
   }
 });
 
@@ -154,8 +161,8 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
       OrderServices.updateOrderStatus(orderId, {
         orderFailureModule: "ADEYN FLOW FAILED",
         orderFailureReason: JSON.stringify(response),
-        resultText: response.message,
-        resultCode: response.errorCode,
+        resultText: response.refusalReason ? response.refusalReason : response.message,
+        resultCode: response.refusalReasonCode ? response.refusalReasonCode : response.errorCode,
       });
     }
   } catch (err) {
