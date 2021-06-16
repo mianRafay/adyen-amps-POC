@@ -203,11 +203,15 @@ exports.createAccount = async (orderId, orderData) => {
       await OrderServices.updateOrderStatus(orderId, {
         orderStatus: ORDER_STATUS.FAILURE.ACCOUNT,
         orderFailureReason: JSON.stringify(accountCreateData),
-        orderFailureModule: "CREATE ACCOUNT FLOW FAILED",
+        orderFailureModule: ORDER_STATUS.FAILURE.ACCOUNT,
         resultText: `AMPS issue - ${accountCreateData.resultInfo.resultCode}`,
         resultCode: accountCreateData.resultInfo.resultCode,
       });
-      throw new Error(common.errorObject(accountCreateData.resultInfo.resultCode, accountCreateData.resultInfo.resultText));
+      throw common.errorObject(
+        accountCreateData.resultInfo.resultCode,
+        accountCreateData.resultInfo.resultText,
+        ORDER_STATUS.FAILURE.ACCOUNT
+      );
     } else {
       await OrderServices.updateOrderStatus(orderId, {
         orderStatus: ORDER_STATUS.SUCCESS.ACCOUNT,
@@ -217,113 +221,130 @@ exports.createAccount = async (orderId, orderData) => {
     }
     return accountCreateData;
   } catch (e) {
-    throw new Error(e);
+    throw e;
   }
 };
 
 exports.addPaymethod = async (orderData, orderId) => {
-  const params = {
-    acctManagePayMethodDetails: {
-      acctManagePayMethodActionInfo: {
-        acctManagePayMethodAction: "ADD",
+  try {
+    const params = {
+      acctManagePayMethodDetails: {
+        acctManagePayMethodActionInfo: {
+          acctManagePayMethodAction: "ADD",
+        },
+        acctManagePayMethodADD: {
+          ariaAgreementID: orderId,
+          ariaAccountID: "",
+          ariaAccountNo: orderData.ariaAccountNo,
+        },
       },
-      acctManagePayMethodADD: {
-        ariaAgreementID: orderId,
-        ariaAccountID: "",
-        ariaAccountNo: orderData.ariaAccountNo,
-      },
-    },
-  };
+    };
 
-  const acctUrl =
-    "https://eu-stage05.workflow.ariasystems.net/bpa/Stampen_Dev01/PostDataToFlow/ARIAMediaSuite/AccountManagement/AcctManagePayMethod";
+    const acctUrl =
+      "https://eu-stage05.workflow.ariasystems.net/bpa/Stampen_Dev01/PostDataToFlow/ARIAMediaSuite/AccountManagement/AcctManagePayMethod";
 
-  const paymentMethodData = await common.sendRequest(params, acctUrl);
-  if (paymentMethodData.resultInfo.resultCode !== 0) {
-    await OrderServices.updateOrderStatus(orderId, {
-      orderStatus: ORDER_STATUS.FAILURE.PAYMENT_METHOD,
-      orderFailureReason: JSON.stringify(paymentMethodData),
-      orderFailureModule: "PAYMENT METHOD FLOW FAILED",
-      resultText: `AMPS issue - ${paymentMethodData.resultInfo.resultCode}`,
-      resultCode: paymentMethodData.resultInfo.resultCode,
+    const paymentMethodData = await common.sendRequest(params, acctUrl);
+    if (paymentMethodData.resultInfo.resultCode !== 0) {
+      await OrderServices.updateOrderStatus(orderId, {
+        orderStatus: ORDER_STATUS.FAILURE.PAYMENT_METHOD,
+        orderFailureReason: JSON.stringify(paymentMethodData),
+        orderFailureModule: ORDER_STATUS.FAILURE.PAYMENT_METHOD,
+        resultText: `AMPS issue - ${paymentMethodData.resultInfo.resultCode}`,
+        resultCode: paymentMethodData.resultInfo.resultCode,
+      });
+      throw common.errorObject(
+        paymentMethodData.resultInfo.resultCode,
+        paymentMethodData.resultInfo.resultText,
+        ORDER_STATUS.FAILURE.PAYMENT_METHOD
+      );
+    }
+    OrderServices.updateOrderStatus(orderId, {
+      orderStatus: ORDER_STATUS.SUCCESS.PAYMENT_METHOD,
     });
-    res.json([response, orderRef]);
+    return paymentMethodData;
+  } catch (e) {
+    throw e;
   }
-  OrderServices.updateOrderStatus(orderId, {
-    orderStatus: ORDER_STATUS.SUCCESS.PAYMENT_METHOD,
-  });
-  return paymentMethodData;
 };
 
 exports.addBillingGroup = async (orderId, paymentMethodId, orderData) => {
-  const orderDetails = JSON.parse(orderData.orderDetails);
-  const params = {
-    acctManageBillingGroupDetails: [
-      {
-        actionDirective: "ADD",
-        ariaAccountNo: orderData.ariaAccountNo,
-        acctManageBillingGroupDetailsADD: {
-          titleCode: orderDetails.subsInfo.titleCode,
-          billingGroupStatus: "ACTIVE",
-          notifyMethod: "XML",
-          paymentOption: "METHODS",
-          payOptionInfo: {
-            payOptionID: "CREDITCARD",
-            payOptionVariant: "STANDARD",
-            paymentEANNum: "",
-            paymentEANRequisitionNum: "",
-          },
-          paymentMethodInfo: {
-            primaryPaymentMethodID: paymentMethodId, //the value get back from payment API
-            backupPaymentMethodID: "",
-          },
-          statementContactDetails: {
-            firstName: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.firstName,
-            middleInitials: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.middleInitials,
-            lastName: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.lastName,
-            emailAddress: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.emailAddress,
-            fullName:
-              orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.company ||
-              orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.firstName +
-                " " +
-                orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.lastName,
-            homePhone: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.homePhone,
-            cellPhone: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.cellPhone,
-            workPhone: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.workPhone,
-            birthDate: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.birthDate,
-            addressLine1: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addressLine1,
-            addressLine2: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addressLine2,
-            addressLine3: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addressLine3,
-            countryCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.countryCode,
-            postalCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.postalCode,
-            postalCity: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.postalCity,
-            addrLocality: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addrLocality,
-            addrStateProv: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addrStateProv,
-            streetName: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.streetName,
-            streetNo: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.streetNo,
+  try {
+    const orderDetails = JSON.parse(orderData.orderDetails);
+    const params = {
+      acctManageBillingGroupDetails: [
+        {
+          actionDirective: "ADD",
+          ariaAccountNo: orderData.ariaAccountNo,
+          acctManageBillingGroupDetailsADD: {
+            titleCode: orderDetails.subsInfo.titleCode,
+            billingGroupStatus: "ACTIVE",
+            notifyMethod: "XML",
+            paymentOption: "METHODS",
+            payOptionInfo: {
+              payOptionID: "CREDITCARD",
+              payOptionVariant: "STANDARD",
+              paymentEANNum: "",
+              paymentEANRequisitionNum: "",
+            },
+            paymentMethodInfo: {
+              primaryPaymentMethodID: paymentMethodId, //the value get back from payment API
+              backupPaymentMethodID: "",
+            },
+            statementContactDetails: {
+              firstName: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.firstName,
+              middleInitials: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.middleInitials,
+              lastName: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.lastName,
+              emailAddress: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.emailAddress,
+              fullName:
+                orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.company ||
+                orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.firstName +
+                  " " +
+                  orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.lastName,
+              homePhone: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.homePhone,
+              cellPhone: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.cellPhone,
+              workPhone: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.workPhone,
+              birthDate: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.birthDate,
+              addressLine1: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addressLine1,
+              addressLine2: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addressLine2,
+              addressLine3: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addressLine3,
+              countryCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.countryCode,
+              postalCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.postalCode,
+              postalCity: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.postalCity,
+              addrLocality: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addrLocality,
+              addrStateProv: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.addrStateProv,
+              streetName: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.streetName,
+              streetNo: orderDetails.accountInfo.acctCreateAccountRequestDetails.accountContact.streetNo,
+            },
           },
         },
-      },
-    ],
-  };
-  const billingUrl =
-    "https://eu-stage05.workflow.ariasystems.net/bpa/Stampen_Dev01/PostDataToFlow/ARIAMediaSuite/AccountManagement/AcctManageBillingGroup";
+      ],
+    };
+    const billingUrl =
+      "https://eu-stage05.workflow.ariasystems.net/bpa/Stampen_Dev01/PostDataToFlow/ARIAMediaSuite/AccountManagement/AcctManageBillingGroup";
 
-  const billingGroupData = await common.sendRequest(params, billingUrl);
-  if (billingGroupData.resultInfo.resultCode !== 0) {
-    await OrderServices.updateOrderStatus(orderId, {
-      orderStatus: ORDER_STATUS.FAILURE.BILLING_GROUP,
-      orderFailureReason: JSON.stringify(billingGroupData),
-      orderFailureModule: "BILLING GROUP FLOW FAILED",
-      resultText: `AMPS issue - ${billingGroupData.resultInfo.resultCode}`,
-      resultCode: billingGroupData.resultInfo.resultCode,
+    const billingGroupData = await common.sendRequest(params, billingUrl);
+    if (billingGroupData.resultInfo.resultCode !== 0) {
+      await OrderServices.updateOrderStatus(orderId, {
+        orderStatus: ORDER_STATUS.FAILURE.BILLING_GROUP,
+        orderFailureReason: JSON.stringify(billingGroupData),
+        orderFailureModule: ORDER_STATUS.FAILURE.BILLING_GROUP,
+        resultText: `AMPS issue - ${billingGroupData.resultInfo.resultCode}`,
+        resultCode: billingGroupData.resultInfo.resultCode,
+      });
+      throw common.errorObject(
+        billingGroupData.resultInfo.resultCode,
+        billingGroupData.resultInfo.resultText,
+        ORDER_STATUS.FAILURE.BILLING_GROUP
+      );
+    }
+    OrderServices.updateOrderStatus(orderId, {
+      orderStatus: ORDER_STATUS.SUCCESS.BILLING_GROUP,
+      ariaBillingGroupID: billingGroupData.acctManageBillingGroupResponseDetails[0].billingGroupResponseINFO.ariaBillingGroupID,
     });
+    return billingGroupData;
+  } catch (e) {
+    throw e;
   }
-  OrderServices.updateOrderStatus(orderId, {
-    orderStatus: ORDER_STATUS.SUCCESS.BILLING_GROUP,
-    ariaBillingGroupID: billingGroupData.acctManageBillingGroupResponseDetails[0].billingGroupResponseINFO.ariaBillingGroupID,
-  });
-  return billingGroupData;
 };
 
 exports.addDeliveryAddress = async (orderData) => {
@@ -375,180 +396,198 @@ exports.addDeliveryAddress = async (orderData) => {
 };
 
 exports.addSubscription = async (orderId, orderData, billingInfo, isDefault = false) => {
-  let params = {};
-
-  const orderDetails = JSON.parse(orderData.orderDetails);
-  if (isDefault) {
-    params = {
-      subsManageSubscriptionAccountDetails: {
-        ariaAccountID: "",
-        ariaAccountNo: orderData.ariaAccountNo,
-        ownerTitleCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.ownerTitleCode,
-        ownerTitleDomain: "",
-      },
-      subsManageSubscriptionDetails: [
-        {
-          actionDirective: "ADD",
-          subsManageSubscriptionDetailsADD: {
-            ariaPlanNo: defaultSubscription.offeringPlanDetail.ariaPlanNo,
-            ariaPlanID: defaultSubscription.offeringPlanDetail.ariaPlanID,
-            productType: defaultSubscription.offeringDetail.productType,
-            productTypeVariant: defaultSubscription.offeringDetail.productTypeVariant,
-            titleCode: defaultSubscription.offeringDetail.titleCode,
-            titleDomain: defaultSubscription.offeringDetail.titleDomain,
-            ariaPlanRateScheduleID: defaultSubscription.offeringPlanDetail.offeringPlanRates[0].ariaScheduleID,
-            ariaBillingGroupID: billingInfo.ariaBillingGroupID,
-            ariaDunningGroupID: billingInfo.ariaDunningGroupID,
-            currencyCode: "sek",
-            billingFreqRecurring: defaultSubscription.offeringPlanDetail.offeringPlanRates[0].billingFreqRecurring,
-            billingFreqUsage: defaultSubscription.offeringPlanDetail.offeringPlanRates[0].billingFreqUsage,
-            channelCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.channelCode,
-            sourceCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.sourceCode,
-            initialStatusCode: "61",
-          },
-        },
-      ],
-    };
-
-    const defaultSub = await this.sendSubscription(params);
-    if (defaultSub.resultInfo.resultCode !== 0) {
-      await OrderServices.updateOrderStatus(orderId, {
-        orderStatus: ORDER_STATUS.FAILURE.DEFAULT_SUBSCRIPTION,
-        orderFailureReason: JSON.stringify(defaultSub),
-        orderFailureModule: "DEFAULT FLOW FAILED",
-        resultText: `AMPS issue - ${defaultSub.resultInfo.resultCode}`,
-        resultCode: defaultSub.resultInfo.resultCode,
-      });
-    }
-    return defaultSub;
-  } else {
-    if (orderDetails.subsInfo.productType !== "DIGITAL") {
-      const addressData = await this.addDeliveryAddress(orderData);
-
+  try {
+    let params = {};
+    const orderDetails = JSON.parse(orderData.orderDetails);
+    if (isDefault) {
       params = {
         subsManageSubscriptionAccountDetails: {
           ariaAccountID: "",
           ariaAccountNo: orderData.ariaAccountNo,
-          ownerTitleCode: orderDetails.subsInfo.titleCode,
+          ownerTitleCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.ownerTitleCode,
           ownerTitleDomain: "",
         },
         subsManageSubscriptionDetails: [
           {
             actionDirective: "ADD",
             subsManageSubscriptionDetailsADD: {
-              ariaPlanNo: orderDetails.subsInfo.ariaPlanNo,
-              ariaPlanID: orderDetails.subsInfo.ariaPlanID,
-              productType: orderDetails.subsInfo.productType,
-              productTypeVariant: "STANDARD",
-              titleCode: orderDetails.subsInfo.titleCode,
-              titleDomain: orderDetails.subsInfo.titleDomain,
-              ariaPlanRateScheduleID: orderDetails.subsInfo.ariaPlanRateScheduleID,
-              numberOfUnits: orderDetails.subsInfo.numberOfUnits,
+              ariaPlanNo: defaultSubscription.offeringPlanDetail.ariaPlanNo,
+              ariaPlanID: defaultSubscription.offeringPlanDetail.ariaPlanID,
+              productType: defaultSubscription.offeringDetail.productType,
+              productTypeVariant: defaultSubscription.offeringDetail.productTypeVariant,
+              titleCode: defaultSubscription.offeringDetail.titleCode,
+              titleDomain: defaultSubscription.offeringDetail.titleDomain,
+              ariaPlanRateScheduleID: defaultSubscription.offeringPlanDetail.offeringPlanRates[0].ariaScheduleID,
               ariaBillingGroupID: billingInfo.ariaBillingGroupID,
               ariaDunningGroupID: billingInfo.ariaDunningGroupID,
               currencyCode: "sek",
-              billingFreqRecurring: orderDetails.subsInfo.billingFreqRecurring,
-              billingFreqUsage: orderDetails.subsInfo.billingFreqUsage,
-              selectedDeliveryDays: "", //not in free one
-              selectedDeliveryCharges: "",
+              billingFreqRecurring: defaultSubscription.offeringPlanDetail.offeringPlanRates[0].billingFreqRecurring,
+              billingFreqUsage: defaultSubscription.offeringPlanDetail.offeringPlanRates[0].billingFreqUsage,
               channelCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.channelCode,
               sourceCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.sourceCode,
-              activationDate: null,
-              subsManageSubscriptionAddInfo: {
-                subscriptionInfo1: "",
-                subscriptionInfo2: "",
-                subscriptionInfo3: "",
-              },
-              subsManageSubscriptionAddrInfo: {
-                distEffectiveStartDate: orderDetails.subsInfo.deliverAddrChangeInfo.distEffectiveStartDate,
-                distEffectiveEndDate: null,
-                distAddrDeliveryList: [
-                  {
-                    distAddrNo: addressData.distManageAddrListResponse[0].distManageAddrInfo.distAddrNo,
-                    distDeliveryDays: orderDetails.subsInfo.deliverAddrChangeInfo.distDeliveryDays,
-                  },
-                ],
-              },
-              subsManageSubscriptionCampaignDetail: orderDetails.subsInfo.subsManageSubscriptionCampaignDetail,
-              subsManageSubscriptionDiscountDetail: orderDetails.subsInfo.subsManageSubscriptionDiscountDetail,
+              initialStatusCode: "61",
             },
           },
         ],
       };
-      const subscriptionData = await this.sendSubscription(params);
-      if (subscriptionData.resultInfo.resultCode !== 0) {
+
+      const defaultSub = await this.sendSubscription(params);
+      if (defaultSub.resultInfo.resultCode !== 0) {
         await OrderServices.updateOrderStatus(orderId, {
-          orderStatus: ORDER_STATUS.FAILURE.SUBSCRIPTION,
-          orderFailureReason: JSON.stringify(subscriptionData),
-          orderFailureModule: "SUBSCRIPTION FLOW FAILED",
-          resultText: `AMPS issue - ${subscriptionData.resultInfo.resultCode}`,
-          resultCode: subscriptionData.resultInfo.resultCode,
+          orderStatus: ORDER_STATUS.FAILURE.DEFAULT_SUBSCRIPTION,
+          orderFailureReason: JSON.stringify(defaultSub),
+          orderFailureModule: ORDER_STATUS.FAILURE.DEFAULT_SUBSCRIPTION,
+          resultText: `AMPS issue - ${defaultSub.resultInfo.resultCode}`,
+          resultCode: defaultSub.resultInfo.resultCode,
         });
+        throw common.errorObject(
+          defaultSub.resultInfo.resultCode,
+          defaultSub.resultInfo.resultText,
+          ORDER_STATUS.FAILURE.DEFAULT_SUBSCRIPTION
+        );
       }
-      OrderServices.updateOrderStatus(orderId, {
-        orderStatus: ORDER_STATUS.SUCCESS.SUBSCRIPTION,
-        ariaMPINo: subscriptionData.subsManageSubscriptionResponseDetails[0].ariaPINo,
-        ariaMPIID: subscriptionData.subsManageSubscriptionResponseDetails[0].ariaPIID,
-      });
-      return subscriptionData;
+      return defaultSub;
     } else {
-      params = {
-        subsManageSubscriptionAccountDetails: {
-          ariaAccountID: "",
-          ariaAccountNo: orderData.ariaAccountNo,
-          ownerTitleCode: orderDetails.subsInfo.titleCode,
-          ownerTitleDomain: "",
-        },
-        subsManageSubscriptionDetails: [
-          {
-            actionDirective: "ADD",
-            subsManageSubscriptionDetailsADD: {
-              ariaPlanNo: orderDetails.subsInfo.ariaPlanNo,
-              ariaPlanID: orderDetails.subsInfo.ariaPlanID,
-              productType: orderDetails.subsInfo.productType,
-              productTypeVariant: "STANDARD",
-              titleCode: orderDetails.subsInfo.titleCode,
-              titleDomain: orderDetails.subsInfo.titleDomain,
-              ariaPlanRateScheduleID: orderDetails.subsInfo.ariaPlanRateScheduleID,
-              numberOfUnits: orderDetails.subsInfo.numberOfUnits,
-              ariaBillingGroupID: billingInfo.ariaBillingGroupID,
-              ariaDunningGroupID: billingInfo.ariaDunningGroupID,
-              currencyCode: "sek",
-              billingFreqRecurring: orderDetails.subsInfo.billingFreqRecurring,
-              billingFreqUsage: orderDetails.subsInfo.billingFreqUsage,
-              selectedDeliveryDays: "", //not in free one
-              selectedDeliveryCharges: "",
-              channelCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.channelCode,
-              sourceCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.sourceCode,
-              activationDate: null,
-              subsManageSubscriptionAddInfo: {
-                subscriptionInfo1: "",
-                subscriptionInfo2: "",
-                subscriptionInfo3: "",
-              },
-              subsManageSubscriptionCampaignDetail: orderDetails.subsInfo.subsManageSubscriptionCampaignDetail,
-              subsManageSubscriptionDiscountDetail: orderDetails.subsInfo.subsManageSubscriptionDiscountDetail,
-            },
+      if (orderDetails.subsInfo.productType !== "DIGITAL") {
+        const addressData = await this.addDeliveryAddress(orderData);
+
+        params = {
+          subsManageSubscriptionAccountDetails: {
+            ariaAccountID: "",
+            ariaAccountNo: orderData.ariaAccountNo,
+            ownerTitleCode: orderDetails.subsInfo.titleCode,
+            ownerTitleDomain: "",
           },
-        ],
-      };
-      const subscriptionData = await this.sendSubscription(params);
-      if (subscriptionData.resultInfo.resultCode !== 0) {
-        await OrderServices.updateOrderStatus(orderId, {
-          orderStatus: ORDER_STATUS.FAILURE.SUBSCRIPTION,
-          orderFailureReason: JSON.stringify(subscriptionData),
-          orderFailureModule: "SUBSCRIPTION FLOW FAILED",
-          resultText: `AMPS issue - ${subscriptionData.resultInfo.resultCode}`,
-          resultCode: subscriptionData.resultInfo.resultCode,
+          subsManageSubscriptionDetails: [
+            {
+              actionDirective: "ADD",
+              subsManageSubscriptionDetailsADD: {
+                ariaPlanNo: orderDetails.subsInfo.ariaPlanNo,
+                ariaPlanID: orderDetails.subsInfo.ariaPlanID,
+                productType: orderDetails.subsInfo.productType,
+                productTypeVariant: "STANDARD",
+                titleCode: orderDetails.subsInfo.titleCode,
+                titleDomain: orderDetails.subsInfo.titleDomain,
+                ariaPlanRateScheduleID: orderDetails.subsInfo.ariaPlanRateScheduleID,
+                numberOfUnits: orderDetails.subsInfo.numberOfUnits,
+                ariaBillingGroupID: billingInfo.ariaBillingGroupID,
+                ariaDunningGroupID: billingInfo.ariaDunningGroupID,
+                currencyCode: "sek",
+                billingFreqRecurring: orderDetails.subsInfo.billingFreqRecurring,
+                billingFreqUsage: orderDetails.subsInfo.billingFreqUsage,
+                selectedDeliveryDays: "", //not in free one
+                selectedDeliveryCharges: "",
+                channelCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.channelCode,
+                sourceCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.sourceCode,
+                activationDate: null,
+                subsManageSubscriptionAddInfo: {
+                  subscriptionInfo1: "",
+                  subscriptionInfo2: "",
+                  subscriptionInfo3: "",
+                },
+                subsManageSubscriptionAddrInfo: {
+                  distEffectiveStartDate: orderDetails.subsInfo.deliverAddrChangeInfo.distEffectiveStartDate,
+                  distEffectiveEndDate: null,
+                  distAddrDeliveryList: [
+                    {
+                      distAddrNo: addressData.distManageAddrListResponse[0].distManageAddrInfo.distAddrNo,
+                      distDeliveryDays: orderDetails.subsInfo.deliverAddrChangeInfo.distDeliveryDays,
+                    },
+                  ],
+                },
+                subsManageSubscriptionCampaignDetail: orderDetails.subsInfo.subsManageSubscriptionCampaignDetail,
+                subsManageSubscriptionDiscountDetail: orderDetails.subsInfo.subsManageSubscriptionDiscountDetail,
+              },
+            },
+          ],
+        };
+        const subscriptionData = await this.sendSubscription(params);
+        if (subscriptionData.resultInfo.resultCode !== 0) {
+          await OrderServices.updateOrderStatus(orderId, {
+            orderStatus: ORDER_STATUS.FAILURE.SUBSCRIPTION,
+            orderFailureReason: JSON.stringify(subscriptionData),
+            orderFailureModule: ORDER_STATUS.FAILURE.SUBSCRIPTION,
+            resultText: `AMPS issue - ${subscriptionData.resultInfo.resultCode}`,
+            resultCode: subscriptionData.resultInfo.resultCode,
+          });
+          throw common.errorObject(
+            subscriptionData.resultInfo.resultCode,
+            subscriptionData.resultInfo.resultText,
+            ORDER_STATUS.FAILURE.SUBSCRIPTION
+          );
+        }
+        OrderServices.updateOrderStatus(orderId, {
+          orderStatus: ORDER_STATUS.SUCCESS.SUBSCRIPTION,
+          ariaMPINo: subscriptionData.subsManageSubscriptionResponseDetails[0].ariaPINo,
+          ariaMPIID: subscriptionData.subsManageSubscriptionResponseDetails[0].ariaPIID,
         });
+        return subscriptionData;
+      } else {
+        params = {
+          subsManageSubscriptionAccountDetails: {
+            ariaAccountID: "",
+            ariaAccountNo: orderData.ariaAccountNo,
+            ownerTitleCode: orderDetails.subsInfo.titleCode,
+            ownerTitleDomain: "",
+          },
+          subsManageSubscriptionDetails: [
+            {
+              actionDirective: "ADD",
+              subsManageSubscriptionDetailsADD: {
+                ariaPlanNo: orderDetails.subsInfo.ariaPlanNo,
+                ariaPlanID: orderDetails.subsInfo.ariaPlanID,
+                productType: orderDetails.subsInfo.productType,
+                productTypeVariant: "STANDARD",
+                titleCode: orderDetails.subsInfo.titleCode,
+                titleDomain: orderDetails.subsInfo.titleDomain,
+                ariaPlanRateScheduleID: orderDetails.subsInfo.ariaPlanRateScheduleID,
+                numberOfUnits: orderDetails.subsInfo.numberOfUnits,
+                ariaBillingGroupID: billingInfo.ariaBillingGroupID,
+                ariaDunningGroupID: billingInfo.ariaDunningGroupID,
+                currencyCode: "sek",
+                billingFreqRecurring: orderDetails.subsInfo.billingFreqRecurring,
+                billingFreqUsage: orderDetails.subsInfo.billingFreqUsage,
+                selectedDeliveryDays: "", //not in free one
+                selectedDeliveryCharges: "",
+                channelCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.channelCode,
+                sourceCode: orderDetails.accountInfo.acctCreateAccountRequestDetails.sourceCode,
+                activationDate: null,
+                subsManageSubscriptionAddInfo: {
+                  subscriptionInfo1: "",
+                  subscriptionInfo2: "",
+                  subscriptionInfo3: "",
+                },
+                subsManageSubscriptionCampaignDetail: orderDetails.subsInfo.subsManageSubscriptionCampaignDetail,
+                subsManageSubscriptionDiscountDetail: orderDetails.subsInfo.subsManageSubscriptionDiscountDetail,
+              },
+            },
+          ],
+        };
+        const subscriptionData = await this.sendSubscription(params);
+        if (subscriptionData.resultInfo.resultCode !== 0) {
+          await OrderServices.updateOrderStatus(orderId, {
+            orderStatus: ORDER_STATUS.FAILURE.SUBSCRIPTION,
+            orderFailureReason: JSON.stringify(subscriptionData),
+            orderFailureModule: "SUBSCRIPTION FLOW FAILED",
+            resultText: `AMPS issue - ${subscriptionData.resultInfo.resultCode}`,
+            resultCode: subscriptionData.resultInfo.resultCode,
+          });
+          throw common.errorObject(
+            subscriptionData.resultInfo.resultCode,
+            subscriptionData.resultInfo.resultText,
+            ORDER_STATUS.FAILURE.SUBSCRIPTION
+          );
+        }
+        OrderServices.updateOrderStatus(orderId, {
+          orderStatus: ORDER_STATUS.SUCCESS.SUBSCRIPTION,
+          ariaMPINo: subscriptionData.subsManageSubscriptionResponseDetails[0].ariaPINo,
+          ariaMPIID: subscriptionData.subsManageSubscriptionResponseDetails[0].ariaPIID,
+        });
+        return subscriptionData;
       }
-      OrderServices.updateOrderStatus(orderId, {
-        orderStatus: ORDER_STATUS.SUCCESS.SUBSCRIPTION,
-        ariaMPINo: subscriptionData.subsManageSubscriptionResponseDetails[0].ariaPINo,
-        ariaMPIID: subscriptionData.subsManageSubscriptionResponseDetails[0].ariaPIID,
-      });
-      return subscriptionData;
     }
+  } catch (e) {
+    throw e;
   }
 };
 
@@ -570,7 +609,7 @@ exports.createOrder = async (req) => {
     resultInfo: {
       error: "false",
       resultCode: 200,
-      resultText: `Order # ${dbParams.id} is created successfully`,
+      resultText: `Order # ${order.dataValues.id} is created successfully`,
       orderId: order.dataValues.id,
       returnUrl: `${process.env.CALLBACK_URL}/checkout/dropin/` + order.dataValues.id,
     },
@@ -590,7 +629,7 @@ exports.createOrderForExistingAccount = async (req) => {
     resultInfo: {
       error: "false",
       resultCode: 200,
-      resultText: `Order # ${dbParams.id} is created successfully against Account No: ${requestData.accountInfo.acctCreateAccountRequestDetails.ariaAccountNo} `,
+      resultText: `Order # ${order.dataValues.id} is created successfully against Account No: ${requestData.accountInfo.acctCreateAccountRequestDetails.ariaAccountNo} `,
       orderId: order.dataValues.id,
       returnUrl: `${process.env.CALLBACK_URL}/checkout/dropin/` + order.dataValues.id,
     },
@@ -612,8 +651,8 @@ exports.createOrderForExistingBilling = async (req) => {
     resultInfo: {
       error: "false",
       resultCode: 200,
-      resultText: `Order # ${dbParams.id} successfully added subscription`,
-      orderId: dbParams.id,
+      resultText: `Order # ${order.dataValues.id} successfully added subscription`,
+      orderId: order.dataValues.id,
     },
   };
 

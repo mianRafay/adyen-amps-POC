@@ -158,23 +158,24 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
       }
       res.send([response, orderRef]);
     } else {
-      OrderServices.updateOrderStatus(orderId, {
+      await OrderServices.updateOrderStatus(orderId, {
         orderFailureModule: "ADEYN FLOW FAILED",
         orderFailureReason: JSON.stringify(response),
         resultText: response.refusalReason ? response.refusalReason : response.message,
         resultCode: response.refusalReasonCode ? response.refusalReasonCode : response.errorCode,
       });
+      res.status(err.statusCode).json(err.message);
     }
   } catch (err) {
     await OrderServices.updateOrderStatus(orderId, {
-      orderFailureModule: "ADEYN FLOW FAILED",
+      orderFailureModule: err.errorText ? err.errorText : "ADEYN FLOW FAILED",
       orderFailureReason: JSON.stringify(err),
       resultText: err.message,
       resultCode: err.errorCode,
     });
     console.error(`Error: ${err.message}, error code: ${err.errorCode}`);
 
-    res.status(err.statusCode).json(err.message);
+    res.status(err.errorCode).json(err.message);
   }
 });
 

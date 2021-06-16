@@ -110,10 +110,11 @@ const common = {
    * @summary always return error object
    *
    */
-  errorObject: (errCode = 500, errMsg = "Internal Server Error") => {
+  errorObject: (errCode = 500, errMsg = "Internal Server Error", errorText = "Adyen Flow Failed") => {
     return {
       message: errMsg,
       errorCode: errCode,
+      errorText: errorText,
     };
   },
   /** ################ AMPS Methods ########################## */
