@@ -39,7 +39,10 @@ const validator = {
               }),
             currencyCode: Joi.any(),
             paymentTerms: Joi.any(),
-            ownerTitleCode: Joi.string().required(),
+            ownerTitleCode: Joi.when("actionDirective", {
+              is: Joi.exist().valid("ADD"),
+              then: Joi.string().required(),
+            }),
             channelCode: Joi.any(),
             sourceCode: Joi.any(),
             notifyMethod: Joi.any(),
