@@ -65,7 +65,6 @@ class CheckoutContainer extends React.Component {
   }
 
   processPaymentResponse(paymentRes) {
-    debugger;
     if (paymentRes.action) {
       this.paymentComponent.handleAction(paymentRes.action);
     } else {

@@ -2,7 +2,6 @@ import React from "react";
 import { Link, useParams, useLocation } from "react-router-dom";
 
 export const Message = ({ type, reason }) => {
-  debugger;
   let msg, img;
   switch (type) {
     case "pending":
@@ -44,7 +43,6 @@ export function Status() {
   let { type = "notfound" } = useParams();
   let query = new URLSearchParams(useLocation().search);
   let reason = query ? query.get("reason") : "";
-  debugger;
   return (
     <div className="status-container">
       <div className="status">
