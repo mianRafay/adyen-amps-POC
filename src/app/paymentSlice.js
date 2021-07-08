@@ -11,13 +11,13 @@ export const slice = createSlice({
     config: {
       paymentMethodsConfiguration: {
         ideal: {
-          showImage: true,
+          showImage: false,
         },
         card: {
-          hasHolderName: true,
-          holderNameRequired: true,
+          hasHolderName: false,
+          holderNameRequired: false,
           name: "Credit or debit card",
-          enableStoreDetails: true,
+          enableStoreDetails: false,
           amount: {
             // value: 1000, // 10€ in minor units
             currency: "EUR",
@@ -72,13 +72,28 @@ export const slice = createSlice({
 export const { paymentMethods, payments, paymentDetails, paymentDataStore } = slice.actions;
 
 export const getPaymentMethods = (orderId) => async (dispatch) => {
-
   const response = await fetch("/api/getPaymentMethods/" + orderId, {
     method: "POST",
   });
   dispatch(paymentMethods([await response.json(), response.status]));
 };
+export const getPaymentMethodsSelfService = (orderId) => async (dispatch) => {
+  const response = await fetch("/api/getPaymentMethodsSelfService/", {
+    method: "POST",
+  });
+  dispatch(paymentMethods([await response.json(), response.status]));
+};
 
+export const initiatePaymentSelfService = (accountNo, billingGroupNo, data) => async (dispatch) => {
+  const response = await fetch("/api/initiatePaymentSelfService/" + accountNo + "/" + billingGroupNo, {
+    method: "POST",
+    body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  dispatch(payments([await response.json(), response.status]));
+};
 export const initiatePayment = (orderId, data) => async (dispatch) => {
   const response = await fetch("/api/initiatePayment/" + orderId, {
     method: "POST",

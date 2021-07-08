@@ -79,3 +79,15 @@ a:hover {
 }
 
 /* end General page body */
+.adyen-checkout__button--pay {
+  background-color: #006b52;
+  font-weight: 900;
+  border-radius: 35px;
+}
+.adyen-checkout__payment-method__brands {
+  display: none;
+}
+.adyen-checkout__dropin {
+    background-color: #e6e9eb;
+
+}

@@ -13,7 +13,7 @@ function App() {
         {/* <Route path="/preview/:type">
           <Preview />
         </Route> */}
-        <Route path="/checkout/:type/:orderId">
+        <Route path="/checkout/:type/:orderId/:accountNo/:billingGroupNo">
           <Payment />
         </Route>
         <Route path="/status/:type">

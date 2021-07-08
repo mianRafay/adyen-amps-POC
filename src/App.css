@@ -287,6 +287,17 @@
   width: 100%;
   height: 100%;
 }
+.payment-container-full {
+  display: flex;
+  justify-content: center;
+  background: #f7f8f9;
+  border: 1px solid #e6e9eb;
+  border-radius: 12px;
+  padding-top: 18px;
+  padding-bottom: 18px;
+  width: 50%;
+  height: 50%;
+}
 
 /* end Payments page */
 
@@ -294,13 +305,13 @@
 
 #dropin {
   width: 100%;
-  max-width: 450px;
+  /* max-width: 450px; */
 }
 
 @media screen and (max-width: 1076px) {
   #dropin {
     width: 100%;
-    max-width: 610px;
+    /* max-width: 610px; */
   }
 }
 

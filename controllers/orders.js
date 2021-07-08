@@ -267,6 +267,79 @@ exports.addPaymethod = async (orderData, orderId) => {
   }
 };
 
+exports.updateBillingGroupSelfService = async (accountNo, billingGroupId, paymentMethodId) => {
+  //Retreive billing group
+  //filter billing group id
+  //update billing group
+  const billingGroupData = await this.getBillingGroups(accountNo);
+  const filteredBillingGroup = billingGroupData.acctRetrieveBillingGroupResponseDetails.acctRetrieveBillingGroupList.filter(
+    (e) => e.ariaBillingGroupNo == billingGroupId
+  );
+  const params = {
+    acctManageBillingGroupDetails: [
+      {
+        actionDirective: "MODIFY",
+        ariaAccountNo: accountNo,
+        acctManageBillingGroupDetailsMODIFY: {
+          titleCode: filteredBillingGroup[0].titleDetails.titleCode,
+          ariaBillingGroupNo: filteredBillingGroup[0].ariaBillingGroupNo,
+          ariaBillingGroupID: filteredBillingGroup[0].ariaBillingGroupID,
+          billingGroupDesc: filteredBillingGroup[0].billingGroupDesc,
+          billingGroupName: filteredBillingGroup[0].billingGroupName,
+          billingGroupStatus: filteredBillingGroup[0].billingGroupStatus,
+          notifyMethod: "XML",
+          paymentOption: filteredBillingGroup[0].paymentOption,
+          ariaDunningGroupID: filteredBillingGroup[0].ariaDunningGroupID,
+          ariaDunningGroupNo: filteredBillingGroup[0].ariaDunningGroupNo,
+          dunningGroupDesc: filteredBillingGroup[0].dunningGroupDesc,
+          dunningGroupName: filteredBillingGroup[0].dunningGroupName,
+          dunningProcessID: filteredBillingGroup[0].dunningProcessID,
+          payOptionInfo: {
+            payOptionID: "CREDITCARD",
+            payOptionVariant: "STANDARD",
+            paymentEANNum: "",
+            paymentEANRequisitionNum: "",
+          },
+          paymentMethodInfo: {
+            primaryPaymentMethodID: paymentMethodId, //the value get back from payment API
+            backupPaymentMethodID: "",
+          },
+          statementContactDetails: filteredBillingGroup[0].statementContactDetails,
+        },
+      },
+    ],
+  };
+  const billingUrl =
+    "https://eu-stage05.workflow.ariasystems.net/bpa/Stampen_Dev01/PostDataToFlow/ARIAMediaSuite/AccountManagement/AcctManageBillingGroup";
+
+  const billingGroupDatas = await common.sendRequest(params, billingUrl);
+  return billingGroupDatas;
+};
+exports.updatePaymentMethodSelfService = async (accountNo, orderId) => {
+  try {
+    const params = {
+      acctManagePayMethodDetails: {
+        acctManagePayMethodActionInfo: {
+          acctManagePayMethodAction: "ADD",
+        },
+        acctManagePayMethodADD: {
+          ariaAgreementID: orderId,
+          ariaAccountID: "",
+          ariaAccountNo: accountNo,
+        },
+      },
+    };
+
+    const acctUrl =
+      "https://eu-stage05.workflow.ariasystems.net/bpa/Stampen_Dev01/PostDataToFlow/ARIAMediaSuite/AccountManagement/AcctManagePayMethod";
+
+    const paymentMethodData = await common.sendRequest(params, acctUrl);
+    return paymentMethodData;
+  } catch (e) {
+    throw e;
+  }
+};
+
 exports.addBillingGroup = async (orderId, paymentMethodId, orderData) => {
   try {
     const orderDetails = JSON.parse(orderData.orderDetails);
@@ -591,6 +664,33 @@ exports.addSubscription = async (orderId, orderData, billingInfo, isDefault = fa
   }
 };
 
+exports.getBillingGroups = async (accountNo) => {
+  try {
+    const params = {
+      acctRetrieveBillingGroupCriteria: {
+        ariaAccountID: null,
+        ariaAccountNo: accountNo,
+        titleFiltering: [
+          { titleCode: "GP", titleDomain: "" },
+          { titleCode: "AT", titleDomain: "" },
+          { titleCode: "BN", titleDomain: "" },
+          { titleCode: "HN", titleDomain: "" },
+          { titleCode: "HP", titleDomain: "" },
+          { titleCode: "TT", titleDomain: "" },
+          { titleCode: "ST", titleDomain: "" },
+          { titleCode: "SM", titleDomain: "" },
+        ],
+      },
+    };
+    const acctUrl =
+      "https://eu-stage05.workflow.ariasystems.net/bpa/Stampen_Dev01/PostDataToFlow/ARIAMediaSuite/AccountManagement/AcctRetrieveBillingGroup";
+    const billingGroupData = await common.sendRequest(params, acctUrl);
+    return billingGroupData;
+  } catch (e) {
+    throw e;
+  }
+};
+
 exports.sendSubscription = async (params) => {
   const subsUrl =
     "https://eu-stage05.workflow.ariasystems.net/bpa/Stampen_Dev01/PostDataToFlow/ARIAMediaSuite/SubscriptionManagement/SubsManageSubscriptions";
@@ -660,6 +760,35 @@ exports.createOrderForExistingBilling = async (req) => {
     },
   };
 
+  return response;
+};
+
+exports.getAccountData = async (req) => {
+  const params = {
+    acctRetrieveAccountCriteria: {
+      ariaAccountID: "",
+      ariaAccountNo: accountNo,
+    },
+  };
+  const url =
+    "https://eu-stage05.workflow.ariasystems.net/bpa/Stampen_Dev01/PostDataToFlow/ARIAMediaSuite/AccountManagement/AcctRetrieveAccount";
+
+  const response = common.sendRequest(params, url);
+  return response;
+};
+
+exports.getBillingGroupData = async (req) => {
+  const params = {
+    acctRetrieveBillingGroupCriteria: {
+      ariaAccountID: null,
+      ariaAccountNo: accountNo,
+    },
+  };
+
+  const url =
+    "https://eu-stage05.workflow.ariasystems.net/bpa/Stampen_Dev01/PostDataToFlow/ARIAMediaSuite/AccountManagement/AcctRetrieveBillingGroup";
+
+  const response = common.sendRequest(params, url);
   return response;
 };
 

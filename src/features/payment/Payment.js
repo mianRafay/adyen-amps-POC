@@ -3,17 +3,29 @@ import { connect } from "react-redux";
 import { useParams } from "react-router-dom";
 import AdyenCheckout from "@adyen/adyen-web";
 import "@adyen/adyen-web/dist/adyen.css";
-import { getPaymentMethods, initiatePayment, submitAdditionalDetails } from "../../app/paymentSlice";
+import {
+  getPaymentMethodsSelfService,
+  initiatePaymentSelfService,
+  getPaymentMethods,
+  initiatePayment,
+  submitAdditionalDetails,
+} from "../../app/paymentSlice";
 
 export function Payment() {
-  const { type, orderId } = useParams();
+  const { type, orderId, accountNo, billingGroupNo } = useParams();
+  console.log(type, orderId, accountNo, billingGroupNo, "params");
   return (
     <div id="payment-page">
-      <div className="container">
-        <ConnectedCheckoutContainer type={type} orderId={orderId} />
-      </div>
+      <ConnectedCheckoutContainer type={type} orderId={orderId} accountNo={accountNo} billingGroupNo={billingGroupNo} />
     </div>
   );
+  //   return (
+  //     <div id="payment-page">
+  //       <div className="container">
+  //         <ConnectedCheckoutContainer type={type} orderId={orderId} accountNo={accountNo} billingGroupNo={billingGroupNo} />
+  //       </div>
+  //     </div>
+  //   );
 }
 
 class CheckoutContainer extends React.Component {
@@ -28,10 +40,13 @@ class CheckoutContainer extends React.Component {
   }
 
   componentDidMount() {
-    if (!this.props.orderId) {
-      window.location.href = `/status/error?reason}`;
+    if (this.props.orderId == 0) {
+      this.props.getPaymentMethodsSelfService(this.props.orderId);
+    } else if (!this.props.orderId) {
+      window.location.href = `/status/error?reason`;
+    } else {
+      this.props.getPaymentMethods(this.props.accountNo, this.props.billingGroupNo);
     }
-    this.props.getPaymentMethods(this.props.orderId);
   }
 
   componentDidUpdate(prevProps) {
@@ -87,12 +102,22 @@ class CheckoutContainer extends React.Component {
   }
 
   onSubmit(state, component) {
-    if (state.isValid) {
-      this.props.initiatePayment(this.props.orderId, {
-        ...state.data,
-        origin: window.location.origin,
-      });
-      this.paymentComponent = component;
+    if (this.props.orderId != 0) {
+      if (state.isValid) {
+        this.props.initiatePayment(this.props.orderId, {
+          ...state.data,
+          origin: window.location.origin,
+        });
+        this.paymentComponent = component;
+      }
+    } else {
+      if (state.isValid) {
+        this.props.initiatePaymentSelfService(this.props.accountNo, this.props.billingGroupNo, {
+          ...state.data,
+          origin: window.location.origin,
+        });
+        this.paymentComponent = component;
+      }
     }
   }
 
@@ -116,6 +141,12 @@ const mapStateToProps = (state) => ({
   payment: state.payment,
 });
 
-const mapDispatchToProps = { getPaymentMethods, initiatePayment, submitAdditionalDetails };
+const mapDispatchToProps = {
+  getPaymentMethodsSelfService,
+  initiatePaymentSelfService,
+  getPaymentMethods,
+  initiatePayment,
+  submitAdditionalDetails,
+};
 
 export const ConnectedCheckoutContainer = connect(mapStateToProps, mapDispatchToProps)(CheckoutContainer);

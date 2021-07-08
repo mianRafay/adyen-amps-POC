@@ -49,7 +49,21 @@ router.post("/getPaymentMethods/:orderId?", async (req, res) => {
     }
   }
 });
+router.post("/getPaymentMethodsSelfService/", async (req, res) => {
+  try {
+    const response = await checkout.paymentMethods({
+      channel: "Web",
+      merchantAccount: process.env.MERCHANT_ACCOUNT,
+    });
 
+    res.json(response);
+  } catch (err) {
+    console.error(`Error: ${err.message}, error code: ${err.errorCode}`);
+    res.status(err.statusCode).json(err.message);
+  }
+});
+// for webportal payment method
+// router.post("/initiatePayment/:orderId?", async (req, res) => {}
 // Submitting a payment
 router.post("/initiatePayment/:orderId?", async (req, res) => {
   const currency = findCurrency(req.body.paymentMethod.type);
@@ -137,6 +151,78 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
   }
 });
 
+router.post("/initiatePaymentSelfService/:accountNo?/:billingGroupNo?", async (req, res) => {
+  const currency = findCurrency(req.body.paymentMethod.type);
+  // find shopper IP from request
+  const shopperIP = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  const accountNo = req.params.accountNo;
+  const billingGroupNo = req.params.billingGroupNo;
+  const orderId = uuid();
+  try {
+    // unique ref for the transaction
+    const orderRef = uuid();
+    // Ideally the data passed here should be computed based on business logic
+    const response = await checkout.payments({
+      amount: {
+        currency: "SEK",
+        value: 0,
+        //  value: 1000
+      }, // value is 10€ in minor units
+      reference: orderRef, // required
+      merchantAccount: process.env.MERCHANT_ACCOUNT, // required
+      channel: "Web", // required
+      additionalData: {
+        // required for 3ds2 native flow
+        "riskdata.skipRisk": "true",
+        allow3DS2: false,
+      },
+      origin: process.env.ORIGIN_URL, // required for 3ds2 native flow
+      browserInfo: req.body.browserInfo, // required for 3ds2
+      shopperIP, // required by some issuers for 3ds2
+      // we pass the orderRef in return URL to get paymentData during redirects
+      returnUrl: `${process.env.ORIGIN_URL}/api/handleShopperRedirect?orderRef=${orderRef}&orderId=${orderId}`, // required for 3ds2 redirect flow
+      paymentMethod: req.body.paymentMethod,
+      billingAddress: req.body.billingAddress,
+      shopperReference: orderId,
+      storePaymentMethod: "true",
+      shopperInteraction: "Ecommerce",
+      recurringProcessingModel: "Subscription",
+    });
+
+    const { action } = response;
+    paymentStore[orderRef] = {
+      amount: {
+        currency,
+      },
+      reference: orderRef,
+    };
+
+    if (action) {
+      paymentDataStore[orderRef] = action.paymentData;
+      const originalHost = new URL(req.headers["referer"]);
+      if (originalHost) {
+        originStore[orderRef] = originalHost.origin;
+      }
+    } else {
+      paymentStore[orderRef].paymentRef = response.pspReference;
+      paymentStore[orderRef].status = response.resultCode;
+    }
+    if (response.resultCode === "Authorised") {
+      //if order is authorized than
+      //add payment method
+      const paymentMethodData = await orderController.updatePaymentMethodSelfService(accountNo, orderId);
+      const billingGroupData = await orderController.updateBillingGroupSelfService(
+        accountNo,
+        billingGroupNo,
+        paymentMethodData.acctManagePayMethodResponseDetails.ariaPayMethodID
+      );
+      res.send([response, orderRef]);
+      //then update billing group
+    }
+  } catch (err) {
+    console.log(err, "err");
+  }
+});
 router.post("/submitAdditionalDetails", async (req, res) => {
   // Create the payload for submitting payment details
   const payload = {
@@ -191,7 +277,7 @@ router.all("/handleShopperRedirect", async (req, res) => {
     // Conditionally handle different result codes for the shopper
     switch (response.resultCode) {
       case "Authorised":
-        await orderController.createAccountWithOrderId(orderId);
+        if (orderId != 0) await orderController.createAccountWithOrderId(orderId);
         res.redirect(`${originalHost}/status/success`);
         break;
       case "Pending":
