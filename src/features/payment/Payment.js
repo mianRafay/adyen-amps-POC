@@ -41,11 +41,11 @@ class CheckoutContainer extends React.Component {
 
   componentDidMount() {
     if (this.props.orderId == 0) {
-      this.props.getPaymentMethodsSelfService(this.props.orderId);
+      this.props.getPaymentMethodsSelfService();
     } else if (!this.props.orderId) {
       window.location.href = `/status/error?reason`;
     } else {
-      this.props.getPaymentMethods(this.props.accountNo, this.props.billingGroupNo);
+      this.props.getPaymentMethods(this.props.orderId);
     }
   }
 

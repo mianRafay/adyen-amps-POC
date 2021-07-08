@@ -77,7 +77,7 @@ export const getPaymentMethods = (orderId) => async (dispatch) => {
   });
   dispatch(paymentMethods([await response.json(), response.status]));
 };
-export const getPaymentMethodsSelfService = (orderId) => async (dispatch) => {
+export const getPaymentMethodsSelfService = () => async (dispatch) => {
   const response = await fetch("/api/getPaymentMethodsSelfService/", {
     method: "POST",
   });
