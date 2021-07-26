@@ -367,6 +367,9 @@ router.post("/orderManageOrder", middleware.apiValidator("orderManageOrder", "bo
   let response;
   try {
     switch (req.body.manageOrderDetails.actionDirective) {
+      case "REGISTRATION":
+        response = await orderController.registerationAccount(req);
+        break;
       case "MODIFY":
         response = await orderController.modifyOrder(req);
         break;

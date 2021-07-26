@@ -718,6 +718,49 @@ exports.createOrder = async (req) => {
   };
   return response;
 };
+exports.registerationAccount = async (req) => {
+  try {
+    const dbParams = {
+      orderDetails: JSON.stringify(req.body.manageOrderDetails),
+      orderStatus: "INITIATED",
+      resultText: "OK",
+      resultCode: "200",
+    };
+    var order = await OrderServices.createOrder(dbParams);
+    const resgiserAccountData = await this.createAccountWithOrderId(order.dataValues.id);
+    if (resgiserAccountData) {
+      const orderData = await OrderServices.getRequestParamsByOrderId(order.dataValues.id);
+
+      const response = {
+        resultInfo: {
+          error: "false",
+          resultCode: 200,
+          resultText: `Order # ${orderData.id} successfully registered an account.`,
+          ariaAccountID: orderData.ariaAccountID,
+          ariaAccountNo: orderData.ariaAccountNo,
+          orderId: orderData.id,
+        },
+      };
+      return response;
+    }
+  } catch (err) {
+    await OrderServices.updateOrderStatus(order.dataValues.id, {
+      orderFailureModule: err.errorText ? err.errorText : "Account registeratin flow failed.",
+      orderFailureReason: JSON.stringify(err),
+      resultText: err.message,
+      resultCode: err.errorCode,
+    });
+    const response = {
+      resultInfo: {
+        error: "true",
+        resultCode: err.errorCode,
+        resultText: err.message,
+        orderId: order.dataValues.id,
+      },
+    };
+    return response;
+  }
+};
 exports.createOrderForExistingAccount = async (req) => {
   const requestData = req.body.manageOrderDetails;
   const dbParams = {
@@ -865,22 +908,30 @@ exports.createAccountWithOrderId = async (orderId) => {
           );
         }
         break;
-      case "ADD-EXISTING-ACCT":
-        {
-          const updatedOrderData = await OrderServices.getRequestParamsByOrderId(orderId);
-          const paymentMethodData = await this.addPaymethod(updatedOrderData, orderId);
-          const billingGroupData = await this.addBillingGroup(
-            orderId,
-            paymentMethodData.acctManagePayMethodResponseDetails.ariaPayMethodID,
-            updatedOrderData
-          );
-          const subscriptionData = await this.addSubscription(
-            orderId,
-            updatedOrderData,
-            billingGroupData.acctManageBillingGroupResponseDetails[0].billingGroupResponseINFO,
-            false
-          );
-        }
+      case "ADD-EXISTING-ACCT": {
+        const updatedOrderData = await OrderServices.getRequestParamsByOrderId(orderId);
+        const paymentMethodData = await this.addPaymethod(updatedOrderData, orderId);
+        const billingGroupData = await this.addBillingGroup(
+          orderId,
+          paymentMethodData.acctManagePayMethodResponseDetails.ariaPayMethodID,
+          updatedOrderData
+        );
+        const subscriptionData = await this.addSubscription(
+          orderId,
+          updatedOrderData,
+          billingGroupData.acctManageBillingGroupResponseDetails[0].billingGroupResponseINFO,
+          false
+        );
+      }
+      case "REGISTRATION":
+        const accountCreateData = await this.createAccount(orderId, orderData);
+        const updatedOrderData = await OrderServices.getRequestParamsByOrderId(orderId);
+        const defaultSub = await this.addSubscription(
+          orderId,
+          updatedOrderData,
+          accountCreateData.acctCreateAccountResponseDetails.acctCreateAccountBillingGroupDetails[0],
+          true
+        );
         break;
     }
     return true;

@@ -4,7 +4,7 @@ const validator = {
 
   orderManageOrder: Joi.object({
     manageOrderDetails: Joi.object({
-      actionDirective: Joi.string().valid("ADD", "MODIFY", "REMOVE", "ADD-EXISTING-BG", "ADD-EXISTING-ACCT").required(),
+      actionDirective: Joi.string().valid("ADD", "MODIFY", "REMOVE", "ADD-EXISTING-BG", "ADD-EXISTING-ACCT","REGISTRATION").required(),
       orderInfo: Joi.when("actionDirective", {
         is: Joi.exist().valid("REMOVE", "MODIFY"),
         then: Joi.object({
