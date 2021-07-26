@@ -20,7 +20,7 @@ const validator = {
         }),
       }),
       accountInfo: Joi.when("actionDirective", {
-        is: Joi.exist().valid("ADD", "ADD-EXISTING-BG", "ADD-EXISTING-ACCT"),
+        is: Joi.exist().valid("ADD", "ADD-EXISTING-BG", "ADD-EXISTING-ACCT","REGISTRATION"),
         then: Joi.object({
           acctCreateAccountRequestDetails: Joi.object({
             ariaAccountID: Joi.string().required(),
@@ -40,7 +40,7 @@ const validator = {
             currencyCode: Joi.any(),
             paymentTerms: Joi.any(),
             ownerTitleCode: Joi.when("actionDirective", {
-              is: Joi.exist().valid("ADD"),
+              is: Joi.exist().valid("ADD","REGISTRATION"),
               then: Joi.string().required(),
             }),
             channelCode: Joi.any(),
@@ -57,7 +57,7 @@ const validator = {
               then: Joi.object().required(),
             }),
             accountContact: Joi.when("actionDirective", {
-              is: Joi.exist().valid("ADD"),
+              is: Joi.exist().valid("ADD","REGISTRATION"),
               then: Joi.object({
                 firstName: Joi.any(),
                 lastName: Joi.any(),
@@ -78,7 +78,7 @@ const validator = {
             }),
           }),
           STMacctCreateAccountPwdRequestDetails: Joi.when("actionDirective", {
-            is: Joi.exist().valid("ADD"),
+            is: Joi.exist().valid("ADD","REGISTRATION"),
             then: Joi.object({
               accountPassword: Joi.any(),
             }).required(),
