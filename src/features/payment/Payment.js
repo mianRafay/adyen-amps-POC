@@ -13,19 +13,11 @@ import {
 
 export function Payment() {
   const { type, orderId, accountNo, billingGroupNo } = useParams();
-  console.log(type, orderId, accountNo, billingGroupNo, "params");
   return (
     <div id="payment-page">
       <ConnectedCheckoutContainer type={type} orderId={orderId} accountNo={accountNo} billingGroupNo={billingGroupNo} />
     </div>
   );
-  //   return (
-  //     <div id="payment-page">
-  //       <div className="container">
-  //         <ConnectedCheckoutContainer type={type} orderId={orderId} accountNo={accountNo} billingGroupNo={billingGroupNo} />
-  //       </div>
-  //     </div>
-  //   );
 }
 
 class CheckoutContainer extends React.Component {
@@ -51,10 +43,16 @@ class CheckoutContainer extends React.Component {
 
   componentDidUpdate(prevProps) {
     const { paymentMethodsRes: paymentMethodsResponse, config, paymentRes, paymentDetailsRes, error } = this.props.payment;
+
+    if (error && error === "Order is completed.") {
+      window.location.href = `/status/success?reason=${error}`;
+      return;
+    }
     if (error && error !== prevProps.payment.error) {
       window.location.href = `/status/error?reason=${error}`;
       return;
     }
+
     if (
       paymentMethodsResponse &&
       config &&
@@ -104,6 +102,7 @@ class CheckoutContainer extends React.Component {
   onSubmit(state, component) {
     if (this.props.orderId != 0) {
       if (state.isValid) {
+        component.setStatus("loading");
         this.props.initiatePayment(this.props.orderId, {
           ...state.data,
           origin: window.location.origin,

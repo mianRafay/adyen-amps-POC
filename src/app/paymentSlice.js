@@ -35,6 +35,8 @@ export const slice = createSlice({
       const [res, status] = action.payload;
       if (status >= 300) {
         state.error = res;
+      }else if(res=="Order is completed."){
+        state.error = res;
       } else {
         res.paymentMethods = res.paymentMethods.filter((it) =>
           ["eps", "scheme", "dotpay", "giropay", "ideal", "directEbanking", "bcmc", "paysafecard"].includes(it.type)

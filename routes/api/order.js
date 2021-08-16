@@ -37,15 +37,22 @@ router.post("/getPaymentMethods/:orderId?", async (req, res) => {
       merchantAccount: process.env.MERCHANT_ACCOUNT,
     });
     const orderId = req.params.orderId;
-    await OrderServices.getRequestParamsByOrderId(orderId);
-
-    res.json(response);
+    const orderData = await OrderServices.getRequestParamsByOrderId(orderId);
+    if (orderData) {
+      if (orderData.orderStatus === "SUBSCRIPTION ADDED") {
+        res.status(200).json("Order is completed.");
+      } else if (orderData.orderStatus === "INITIATED") {
+        res.json(response);
+      } else {
+        throw { errorCode: orderData.resultCode > 500 ? 500 : orderData.resultCode, message: orderData.resultText };
+      }
+    }
   } catch (err) {
     if (err?.name == "NoRecordFound") {
       res.status(404).json("Order Id is invalid.");
     } else {
       console.error(`Error: ${err.message}, error code: ${err.errorCode}`);
-      res.status(err.statusCode).json(err.message);
+      res.status(err.errorCode).json(err.message);
     }
   }
 });
@@ -63,13 +70,13 @@ router.post("/getPaymentMethodsSelfService/", async (req, res) => {
   }
 });
 // for webportal payment method
-// router.post("/initiatePayment/:orderId?", async (req, res) => {}
 // Submitting a payment
 router.post("/initiatePayment/:orderId?", async (req, res) => {
   const currency = findCurrency(req.body.paymentMethod.type);
   // find shopper IP from request
   const shopperIP = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   const orderId = req.params.orderId;
+  //check order status and
   try {
     // unique ref for the transaction
     const orderRef = uuid();
@@ -136,7 +143,7 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
         resultText: response.refusalReason ? response.refusalReason : response.message,
         resultCode: response.refusalReasonCode ? response.refusalReasonCode : response.errorCode,
       });
-      res.status(err.statusCode).json(err.message);
+      res.status(500).json(response.refusalReason || response.message);
     }
   } catch (err) {
     await OrderServices.updateOrderStatus(orderId, {
@@ -147,7 +154,7 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
     });
     console.error(`Error: ${err.message}, error code: ${err.errorCode}`);
 
-    res.status(err.errorCode).json(err.message);
+    res.status(err.errorCode > 500 ? 500 : err.errorCode).json(err.message);
   }
 });
 
