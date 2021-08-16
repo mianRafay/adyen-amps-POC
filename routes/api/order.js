@@ -80,6 +80,9 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
   try {
     // unique ref for the transaction
     const orderRef = uuid();
+    const orderData = await OrderServices.getRequestParamsByOrderId(orderId);
+    const orderRequestData = await JSON.parse(orderData.orderDetails);
+    const merchantAccount = await getMerchantAccount(orderRequestData.subsInfo.titleCode);
     // Ideally the data passed here should be computed based on business logic
     const response = await checkout.payments({
       amount: {
@@ -88,7 +91,7 @@ router.post("/initiatePayment/:orderId?", async (req, res) => {
         //  value: 1000
       }, // value is 10€ in minor units
       reference: orderRef, // required
-      merchantAccount: process.env.MERCHANT_ACCOUNT, // required
+      merchantAccount: merchantAccount, // required
       channel: "Web", // required
       additionalData: {
         // required for 3ds2 native flow
@@ -456,7 +459,50 @@ function findPayment(pspReference) {
   }
   return payments[0];
 }
-
+function getMerchantAccount(titleCode) {
+  let returnValue;
+  switch (titleCode) {
+    case "GP":
+      returnValue = "Goteborgs-Posten";
+      break;
+    case "HN":
+      returnValue = "HallandsNyheter";
+      break;
+    case "HP":
+      returnValue = "Hallandsposten";
+      break;
+    case "BN":
+      returnValue = "Bohuslaningen";
+      break;
+    case "TT":
+      returnValue = "TT-ELA";
+      break;
+    case "ST":
+      returnValue = "StromstadsTidning";
+      break;
+    case "AT":
+      returnValue = "AlingsasTidning";
+      break;
+    case "KP":
+      returnValue = "Kungalvs-Posten";
+      break;
+    case "KBP":
+      returnValue = "Kungsbacka-Posten";
+      break;
+    case "STO":
+      returnValue = "LokaltidningenSTO";
+      break;
+    case "MP":
+      returnValue = "Molndals-Posten";
+      break;
+    case "PT":
+      returnValue = "PartilleTidning";
+      break;
+    default:
+      return "";
+  }
+  return returnValue;
+}
 /* ################# end UTILS ###################### */
 // Handles any requests that doesn't match the above
 // router.get("*", (req, res) => {
